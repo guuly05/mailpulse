@@ -1,14 +1,16 @@
 import React from "react";
-import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle } from "lucide-react";
+import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split } from "lucide-react";
 
 interface HeaderProps {
   campaignCount: number;
   onOpenHistory: () => void;
   onOpenExport: () => void;
   onOpenSpamModal: () => void;
+  onOpenSplitTest?: () => void;
   onNewCampaign: () => void;
   hasCampaign: boolean;
   spamScore?: number;
+  hasSplitTest?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,9 +18,11 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHistory,
   onOpenExport,
   onOpenSpamModal,
+  onOpenSplitTest,
   onNewCampaign,
   hasCampaign,
   spamScore,
+  hasSplitTest,
 }) => {
   return (
     <header id="app-header" className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 text-slate-100 shadow-md">
@@ -61,6 +65,22 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span>Spam Score: {spamScore}/100</span>
+                </button>
+              )}
+
+              {/* A/B Split Test Button */}
+              {onOpenSplitTest && (
+                <button
+                  id="header-split-test-btn"
+                  onClick={onOpenSplitTest}
+                  className="flex items-center space-x-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                  title="A/B Split Test Campaign"
+                >
+                  <Split className="w-4 h-4 text-purple-400" />
+                  <span className="hidden sm:inline">A/B Split Test</span>
+                  {hasSplitTest && (
+                    <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                  )}
                 </button>
               )}
 

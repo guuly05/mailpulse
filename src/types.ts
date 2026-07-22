@@ -44,6 +44,24 @@ export interface SpamScoreAnalysis {
   recommendations: string[];
 }
 
+export interface CampaignVariant {
+  variantName: string;
+  hypothesis: string;
+  subjectLines: SubjectLine[];
+  selectedSubjectIndex: number;
+  previewText: string;
+  heroImagePrompt: string;
+  heroImageUrl?: string;
+  headline: string;
+  subheadline: string;
+  bodyParagraphs: string[];
+  keyHighlights: KeyHighlight[];
+  primaryCTA: PrimaryCTA;
+  promoOffer?: PromoOffer;
+  secondarySection?: SecondarySection;
+  spamScoreAnalysis: SpamScoreAnalysis;
+}
+
 export interface EmailCampaign {
   id: string;
   createdAt: number;
@@ -68,6 +86,12 @@ export interface EmailCampaign {
   backgroundColor: string;
   textColor: string;
   visualStyle: string;
+  
+  // A/B Split Testing Support
+  variantAName?: string;
+  variantB?: CampaignVariant;
+  winningVariant?: 'A' | 'B';
+  isSplitTesting?: boolean;
 }
 
 export interface CampaignGenerationOptions {

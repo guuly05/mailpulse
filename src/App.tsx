@@ -8,6 +8,7 @@ import { RefinementAssistant } from "./components/RefinementAssistant";
 import { SpamCheckModal } from "./components/SpamCheckModal";
 import { ExportModal } from "./components/ExportModal";
 import { SavedCampaignsDrawer } from "./components/SavedCampaignsDrawer";
+import { SplitTestComparator } from "./components/SplitTestComparator";
 import { Sparkles, AlertCircle, RefreshCw, Wand2 } from "lucide-react";
 
 const LOCAL_STORAGE_KEY = "mailpulse_saved_campaigns_v1";
@@ -18,6 +19,8 @@ export default function App() {
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isGeneratingVariant, setIsGeneratingVariant] = useState(false);
+  const [isGeneratingImageB, setIsGeneratingImageB] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -209,6 +212,7 @@ export default function App() {
           id: activeCampaign.id,
           createdAt: activeCampaign.createdAt,
           heroImageUrl: activeCampaign.heroImageUrl,
+          variantB: activeCampaign.variantB,
         };
         saveOrUpdateActiveCampaign(updated);
       }
@@ -217,6 +221,95 @@ export default function App() {
       setErrorMessage(err.message || "Failed to refine campaign.");
     } finally {
       setIsRefining(false);
+    }
+  };
+
+  // Generate A/B Split Test Challenger Variant B
+  const handleGenerateVariantB = async (strategy: string) => {
+    if (!activeCampaign) return;
+    setIsGeneratingVariant(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch("/api/campaign/generate-variant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentCampaign: activeCampaign,
+          strategy,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to generate challenger variant.");
+      }
+
+      const data = await response.json();
+      if (data.success && data.variantB) {
+        const updatedCampaign: EmailCampaign = {
+          ...activeCampaign,
+          variantB: data.variantB,
+          isSplitTesting: true,
+        };
+        saveOrUpdateActiveCampaign(updatedCampaign);
+
+        // Generate banner image for Variant B if prompt is returned
+        if (data.variantB.heroImagePrompt) {
+          handleRegenerateBannerImageB(updatedCampaign, data.variantB.heroImagePrompt);
+        }
+
+        // Scroll to split-test comparator
+        setTimeout(() => {
+          const splitEl = document.getElementById("split-test-comparator-container");
+          if (splitEl) {
+            splitEl.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 150);
+      }
+    } catch (err: any) {
+      console.error("Error generating variant:", err);
+      setErrorMessage(err.message || "Failed to generate challenger variant.");
+    } finally {
+      setIsGeneratingVariant(false);
+    }
+  };
+
+  // Regenerate Banner AI Image for Variant B
+  const handleRegenerateBannerImageB = async (targetCampaign: EmailCampaign, imagePrompt: string) => {
+    if (!targetCampaign.variantB) return;
+    setIsGeneratingImageB(true);
+
+    try {
+      const response = await fetch("/api/campaign/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: imagePrompt, aspectRatio: "16:9" }),
+      });
+
+      const data = await response.json();
+      if (data.imageUrl && targetCampaign.variantB) {
+        const updated: EmailCampaign = {
+          ...targetCampaign,
+          variantB: {
+            ...targetCampaign.variantB,
+            heroImageUrl: data.imageUrl,
+            heroImagePrompt: imagePrompt,
+          },
+        };
+        saveOrUpdateActiveCampaign(updated);
+      }
+    } catch (err) {
+      console.error("Variant B image generation failed:", err);
+    } finally {
+      setIsGeneratingImageB(false);
+    }
+  };
+
+  const scrollToSplitTest = () => {
+    const el = document.getElementById("split-test-comparator-container");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -229,12 +322,14 @@ export default function App() {
         onOpenHistory={() => setShowHistoryDrawer(true)}
         onOpenExport={() => setShowExportModal(true)}
         onOpenSpamModal={() => setShowSpamModal(true)}
+        onOpenSplitTest={scrollToSplitTest}
         onNewCampaign={() => {
           setActiveCampaign(null);
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
         hasCampaign={!!activeCampaign}
         spamScore={activeCampaign?.spamScoreAnalysis?.score}
+        hasSplitTest={!!activeCampaign?.variantB}
       />
 
       {/* Main Container */}
@@ -291,6 +386,16 @@ export default function App() {
             <RefinementAssistant
               onRefine={handleRefineCampaign}
               isRefining={isRefining}
+            />
+
+            {/* A/B Split Testing Comparator */}
+            <SplitTestComparator
+              campaign={activeCampaign}
+              onUpdateCampaign={(updated) => saveOrUpdateActiveCampaign(updated)}
+              onGenerateVariantB={handleGenerateVariantB}
+              isGeneratingVariant={isGeneratingVariant}
+              onRegenerateImageB={(prompt) => handleRegenerateBannerImageB(activeCampaign, prompt)}
+              isGeneratingImageB={isGeneratingImageB}
             />
 
             {/* Email Canvas Preview */}

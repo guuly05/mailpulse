@@ -10,34 +10,55 @@ interface ExportModalProps {
 
 export const ExportModal: React.FC<ExportModalProps> = ({ campaign, onClose }) => {
   const [activeTab, setActiveTab] = useState<"html" | "text" | "test">("html");
+  const [selectedVariant, setSelectedVariant] = useState<"A" | "B">("A");
   const [copied, setCopied] = useState(false);
   const [testEmail, setTestEmail] = useState("subscriber@example.com");
   const [testSent, setTestSent] = useState(false);
 
-  const rawHTML = generateEmailHTML(campaign);
+  const activeCampaignToExport: EmailCampaign =
+    selectedVariant === "B" && campaign.variantB
+      ? {
+          ...campaign,
+          subjectLines: campaign.variantB.subjectLines,
+          selectedSubjectIndex: campaign.variantB.selectedSubjectIndex,
+          previewText: campaign.variantB.previewText,
+          heroImagePrompt: campaign.variantB.heroImagePrompt,
+          heroImageUrl: campaign.variantB.heroImageUrl || campaign.heroImageUrl,
+          headline: campaign.variantB.headline,
+          subheadline: campaign.variantB.subheadline,
+          bodyParagraphs: campaign.variantB.bodyParagraphs,
+          keyHighlights: campaign.variantB.keyHighlights,
+          primaryCTA: campaign.variantB.primaryCTA,
+          promoOffer: campaign.variantB.promoOffer,
+          secondarySection: campaign.variantB.secondarySection,
+          spamScoreAnalysis: campaign.variantB.spamScoreAnalysis,
+        }
+      : campaign;
+
+  const rawHTML = generateEmailHTML(activeCampaignToExport);
 
   const activeSubject =
-    campaign.subjectLines[campaign.selectedSubjectIndex]?.text ||
-    campaign.subjectLines[0]?.text ||
-    campaign.campaignTitle;
+    activeCampaignToExport.subjectLines[activeCampaignToExport.selectedSubjectIndex]?.text ||
+    activeCampaignToExport.subjectLines[0]?.text ||
+    activeCampaignToExport.campaignTitle;
 
   const plainText = `SUBJECT: ${activeSubject}
-PREVIEW TEXT: ${campaign.previewText}
+PREVIEW TEXT: ${activeCampaignToExport.previewText}
 
-${campaign.headline.toUpperCase()}
-${campaign.subheadline}
+${activeCampaignToExport.headline.toUpperCase()}
+${activeCampaignToExport.subheadline}
 
-${campaign.bodyParagraphs.join("\n\n")}
+${activeCampaignToExport.bodyParagraphs.join("\n\n")}
 
-${campaign.promoOffer?.offerCode ? `SPECIAL OFFER: Use code ${campaign.promoOffer.offerCode} at checkout!` : ""}
+${activeCampaignToExport.promoOffer?.offerCode ? `SPECIAL OFFER: Use code ${activeCampaignToExport.promoOffer.offerCode} at checkout!` : ""}
 
-${campaign.keyHighlights.map((h) => `- ${h.title}: ${h.description}`).join("\n")}
+${activeCampaignToExport.keyHighlights.map((h) => `- ${h.title}: ${h.description}`).join("\n")}
 
-[ ${campaign.primaryCTA.text} ]: ${campaign.primaryCTA.url}
+[ ${activeCampaignToExport.primaryCTA.text} ]: ${activeCampaignToExport.primaryCTA.url}
 
 --
-${campaign.footer.companyName}
-${campaign.footer.address}
+${activeCampaignToExport.footer.companyName}
+${activeCampaignToExport.footer.address}
 To unsubscribe, click here.
 `;
 
@@ -83,6 +104,35 @@ To unsubscribe, click here.
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Variant Selector if A/B Split Test Exists */}
+        {campaign.variantB && (
+          <div className="mt-3 bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-400">Select Export Variant:</span>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setSelectedVariant("A")}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                  selectedVariant === "A"
+                    ? "bg-blue-600 text-white shadow"
+                    : "bg-slate-900 text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Variant A (Control)
+              </button>
+              <button
+                onClick={() => setSelectedVariant("B")}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                  selectedVariant === "B"
+                    ? "bg-purple-600 text-white shadow"
+                    : "bg-slate-900 text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Variant B (Challenger)
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Tab Switcher */}
         <div className="flex space-x-1 my-4 bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0">

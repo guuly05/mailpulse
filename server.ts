@@ -302,6 +302,162 @@ Please update the campaign fields appropriately while maintaining high quality a
   }
 });
 
+// API Route: Generate A/B Split Test Challenger Variant (Variant B)
+app.post("/api/campaign/generate-variant", async (req, res) => {
+  try {
+    const { currentCampaign, strategy = "Test Storytelling & Curiosity Hook vs Direct Urgency" } = req.body;
+
+    if (!currentCampaign) {
+      return res.status(400).json({ error: "Current base campaign is required to generate a variant." });
+    }
+
+    const ai = getGeminiClient();
+
+    const systemInstruction = `You are a Conversion Rate Optimization (CRO) and Email A/B Testing Expert.
+Create a distinct, high-converting Variant B (Challenger) email campaign to split-test against the baseline Variant A.
+Test different hypotheses (e.g. Curiosity vs Urgency, Short vs Detailed Copy, Storytelling vs Direct Discount).
+Return ONLY valid JSON matching the requested Variant schema.`;
+
+    const userPrompt = `
+Baseline Campaign (Variant A):
+- Title: ${currentCampaign.campaignTitle}
+- Headline: ${currentCampaign.headline}
+- Subject: ${currentCampaign.subjectLines?.[0]?.text || "N/A"}
+- Body Summary: ${currentCampaign.bodyParagraphs?.join(" ") || ""}
+- Brand: ${currentCampaign.brandName}
+
+Split-Test Strategy / Hypothesis:
+"${strategy}"
+
+Generate a complete Variant B challenger campaign including:
+1. Variant Name (e.g. "Variant B: Curiosity & Storytelling Angle")
+2. Hypothesis statement explaining what is being tested.
+3. 4 new distinct Subject Lines matching the new angle with open rate scores.
+4. Preview text (under 90 chars).
+5. Catchy headline and subheadline matching the new strategy.
+6. Reframed body copy (2-3 paragraphs with distinct narrative framing).
+7. 3 Key highlights / value props tailored to Variant B strategy.
+8. Primary Call to Action button text and secondary note.
+9. Promo offer details if applicable.
+10. Hero image prompt for a distinct visual banner.
+11. Deliverability & Spam Analysis for Variant B.
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: userPrompt,
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            variantName: { type: Type.STRING },
+            hypothesis: { type: Type.STRING },
+            subjectLines: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  text: { type: Type.STRING },
+                  type: { type: Type.STRING },
+                  openRateScore: { type: Type.NUMBER },
+                  reasoning: { type: Type.STRING },
+                },
+                required: ["text", "type", "openRateScore", "reasoning"],
+              },
+            },
+            previewText: { type: Type.STRING },
+            heroImagePrompt: { type: Type.STRING },
+            headline: { type: Type.STRING },
+            subheadline: { type: Type.STRING },
+            bodyParagraphs: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+            },
+            keyHighlights: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  iconName: { type: Type.STRING },
+                },
+                required: ["title", "description", "iconName"],
+              },
+            },
+            primaryCTA: {
+              type: Type.OBJECT,
+              properties: {
+                text: { type: Type.STRING },
+                url: { type: Type.STRING },
+                secondaryNote: { type: Type.STRING },
+              },
+              required: ["text", "url"],
+            },
+            promoOffer: {
+              type: Type.OBJECT,
+              properties: {
+                badgeText: { type: Type.STRING },
+                offerTitle: { type: Type.STRING },
+                offerCode: { type: Type.STRING },
+                expirationNotice: { type: Type.STRING },
+              },
+            },
+            secondarySection: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                description: { type: Type.STRING },
+                ctaText: { type: Type.STRING },
+                ctaUrl: { type: Type.STRING },
+              },
+            },
+            spamScoreAnalysis: {
+              type: Type.OBJECT,
+              properties: {
+                score: { type: Type.NUMBER },
+                grade: { type: Type.STRING },
+                triggerWordsFound: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+                recommendations: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+              },
+              required: ["score", "grade", "triggerWordsFound", "recommendations"],
+            },
+          },
+          required: [
+            "variantName",
+            "hypothesis",
+            "subjectLines",
+            "previewText",
+            "heroImagePrompt",
+            "headline",
+            "subheadline",
+            "bodyParagraphs",
+            "keyHighlights",
+            "primaryCTA",
+            "spamScoreAnalysis",
+          ],
+        },
+      },
+    });
+
+    const jsonText = response.text || "{}";
+    const variantB = JSON.parse(jsonText);
+
+    res.json({ success: true, variantB });
+  } catch (error: any) {
+    console.error("Error generating variant:", error);
+    res.status(500).json({ error: error.message || "Failed to generate challenger variant." });
+  }
+});
+
 // Start Express and Vite middleware
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
