@@ -1,0 +1,6 @@
+{
+  "name": "Email Campaign Generator",
+  "description": "Generate complete email marketing campaigns with subject lines, preview text, structured body copy, CTAs, and AI visual hero banners.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,91 @@
+export interface SubjectLine {
+  text: string;
+  type: 'urgency' | 'curiosity' | 'direct' | 'personalized' | string;
+  openRateScore: number;
+  reasoning: string;
+}
+
+export interface KeyHighlight {
+  title: string;
+  description: string;
+  iconName: string;
+}
+
+export interface PrimaryCTA {
+  text: string;
+  url: string;
+  secondaryNote?: string;
+}
+
+export interface PromoOffer {
+  badgeText?: string;
+  offerTitle?: string;
+  offerCode?: string;
+  expirationNotice?: string;
+}
+
+export interface SecondarySection {
+  title: string;
+  description: string;
+  ctaText?: string;
+  ctaUrl?: string;
+}
+
+export interface FooterInfo {
+  companyName: string;
+  address: string;
+  unsubscribeText?: string;
+}
+
+export interface SpamScoreAnalysis {
+  score: number;
+  grade: string;
+  triggerWordsFound: string[];
+  recommendations: string[];
+}
+
+export interface EmailCampaign {
+  id: string;
+  createdAt: number;
+  campaignTitle: string;
+  subjectLines: SubjectLine[];
+  selectedSubjectIndex: number;
+  previewText: string;
+  heroImagePrompt: string;
+  heroImageUrl?: string;
+  headline: string;
+  subheadline: string;
+  bodyParagraphs: string[];
+  keyHighlights: KeyHighlight[];
+  primaryCTA: PrimaryCTA;
+  promoOffer?: PromoOffer;
+  secondarySection?: SecondarySection;
+  footer: FooterInfo;
+  spamScoreAnalysis: SpamScoreAnalysis;
+  brandName: string;
+  brandLogoUrl?: string;
+  primaryColor: string;
+  backgroundColor: string;
+  textColor: string;
+  visualStyle: string;
+}
+
+export interface CampaignGenerationOptions {
+  prompt: string;
+  goal: string;
+  audience: string;
+  tone: string;
+  brandName: string;
+  ctaText: string;
+  promoCode: string;
+  visualStyle: string;
+  primaryColor: string;
+}
+
+export interface PresetTemplate {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  options: CampaignGenerationOptions;
+}
