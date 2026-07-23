@@ -9,6 +9,7 @@ import { SpamCheckModal } from "./components/SpamCheckModal";
 import { ExportModal } from "./components/ExportModal";
 import { SavedCampaignsDrawer } from "./components/SavedCampaignsDrawer";
 import { SplitTestComparator } from "./components/SplitTestComparator";
+import { CampaignPerformance } from "./components/CampaignPerformance";
 import { Sparkles, AlertCircle, RefreshCw, Wand2 } from "lucide-react";
 
 const LOCAL_STORAGE_KEY = "mailpulse_saved_campaigns_v1";
@@ -397,6 +398,9 @@ export default function App() {
               onRegenerateImageB={(prompt) => handleRegenerateBannerImageB(activeCampaign, prompt)}
               isGeneratingImageB={isGeneratingImageB}
             />
+
+            {/* Campaign Performance Visualizer */}
+            <CampaignPerformance campaign={activeCampaign} />
 
             {/* Email Canvas Preview */}
             <EmailPreview
