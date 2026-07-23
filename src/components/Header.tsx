@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split } from "lucide-react";
+import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split, CloudCheck, CloudUpload, CheckCircle2, Save } from "lucide-react";
 
 interface HeaderProps {
   campaignCount: number;
@@ -8,9 +8,12 @@ interface HeaderProps {
   onOpenSpamModal: () => void;
   onOpenSplitTest?: () => void;
   onNewCampaign: () => void;
+  onForceAutoSave?: () => void;
   hasCampaign: boolean;
   spamScore?: number;
   hasSplitTest?: boolean;
+  saveStatus?: "saved" | "saving" | "idle";
+  timeAgoText?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,9 +23,12 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSpamModal,
   onOpenSplitTest,
   onNewCampaign,
+  onForceAutoSave,
   hasCampaign,
   spamScore,
   hasSplitTest,
+  saveStatus = "idle",
+  timeAgoText = "Draft saved",
 }) => {
   return (
     <header id="app-header" className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 text-slate-100 shadow-md">
@@ -51,6 +57,25 @@ export const Header: React.FC<HeaderProps> = ({
           
           {hasCampaign && (
             <>
+              {/* Auto-Save Indicator Badge */}
+              <button
+                onClick={onForceAutoSave}
+                title="Draft automatically saved to local browser storage"
+                className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-950/80 border border-slate-800 text-slate-300 hover:text-white transition"
+              >
+                {saveStatus === "saving" ? (
+                  <>
+                    <CloudUpload className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+                    <span className="text-blue-400 font-semibold">Auto-saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-slate-400">{timeAgoText || "Draft saved"}</span>
+                  </>
+                )}
+              </button>
+
               {/* Deliverability / Spam Score Badge */}
               {spamScore !== undefined && (
                 <button

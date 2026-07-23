@@ -29,6 +29,11 @@ export default function App() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showSpamModal, setShowSpamModal] = useState(false);
 
+  // Auto-Save draft state
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [timeAgoText, setTimeAgoText] = useState<string>("Draft saved");
+
   // Load saved campaigns from localStorage on mount
   useEffect(() => {
     try {
@@ -38,12 +43,95 @@ export default function App() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           setSavedCampaigns(parsed);
           setActiveCampaign(parsed[0]);
+          setLastSavedAt(new Date());
+          setSaveStatus("saved");
         }
       }
     } catch (err) {
       console.error("Failed to parse saved campaigns:", err);
     }
   }, []);
+
+  // Debounced Auto-Save hook: saves draft whenever activeCampaign changes
+  useEffect(() => {
+    if (!activeCampaign) {
+      setSaveStatus("idle");
+      return;
+    }
+
+    setSaveStatus("saving");
+    const timer = setTimeout(() => {
+      saveOrUpdateActiveCampaignInternal(activeCampaign);
+      setSaveStatus("saved");
+      setLastSavedAt(new Date());
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [activeCampaign]);
+
+  // Periodic safeguard interval: auto-saves every 20 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (activeCampaign) {
+        setSaveStatus("saving");
+        saveOrUpdateActiveCampaignInternal(activeCampaign);
+        setSaveStatus("saved");
+        setLastSavedAt(new Date());
+      }
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [activeCampaign]);
+
+  // Format relative time ago e.g. "Saved 5s ago" or "Saved 2m ago"
+  useEffect(() => {
+    if (!lastSavedAt) return;
+
+    const updateLabel = () => {
+      const elapsedSeconds = Math.max(0, Math.floor((Date.now() - lastSavedAt.getTime()) / 1000));
+      if (elapsedSeconds < 5) {
+        setTimeAgoText("Saved just now");
+      } else if (elapsedSeconds < 60) {
+        setTimeAgoText(`Saved ${elapsedSeconds}s ago`);
+      } else {
+        const mins = Math.floor(elapsedSeconds / 60);
+        setTimeAgoText(`Saved ${mins}m ago`);
+      }
+    };
+
+    updateLabel();
+    const timer = setInterval(updateLabel, 5000);
+    return () => clearInterval(timer);
+  }, [lastSavedAt]);
+
+  // Internal helper to avoid setting state loop inside effect
+  const saveOrUpdateActiveCampaignInternal = (campaign: EmailCampaign) => {
+    setSavedCampaigns((prev) => {
+      const existingIndex = prev.findIndex((c) => c.id === campaign.id);
+      let newList: EmailCampaign[];
+      if (existingIndex >= 0) {
+        newList = [...prev];
+        newList[existingIndex] = campaign;
+      } else {
+        newList = [campaign, ...prev];
+      }
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newList));
+      } catch (e) {
+        console.error("LocalStorage write error:", e);
+      }
+      return newList;
+    });
+  };
+
+  const handleForceSave = () => {
+    if (!activeCampaign) return;
+    setSaveStatus("saving");
+    saveOrUpdateActiveCampaignInternal(activeCampaign);
+    setTimeout(() => {
+      setSaveStatus("saved");
+      setLastSavedAt(new Date());
+    }, 300);
+  };
 
   // Save campaigns to localStorage whenever list changes
   const saveCampaignsList = (list: EmailCampaign[]) => {
@@ -57,15 +145,6 @@ export default function App() {
 
   const saveOrUpdateActiveCampaign = (campaign: EmailCampaign) => {
     setActiveCampaign(campaign);
-    const existingIndex = savedCampaigns.findIndex((c) => c.id === campaign.id);
-    let newList: EmailCampaign[];
-    if (existingIndex >= 0) {
-      newList = [...savedCampaigns];
-      newList[existingIndex] = campaign;
-    } else {
-      newList = [campaign, ...savedCampaigns];
-    }
-    saveCampaignsList(newList);
   };
 
   const handleDeleteCampaign = (id: string) => {
@@ -328,9 +407,12 @@ export default function App() {
           setActiveCampaign(null);
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
+        onForceAutoSave={handleForceSave}
         hasCampaign={!!activeCampaign}
         spamScore={activeCampaign?.spamScoreAnalysis?.score}
         hasSplitTest={!!activeCampaign?.variantB}
+        saveStatus={saveStatus}
+        timeAgoText={timeAgoText}
       />
 
       {/* Main Container */}
