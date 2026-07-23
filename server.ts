@@ -458,6 +458,96 @@ Generate a complete Variant B challenger campaign including:
   }
 });
 
+// API Route: Fetch Search-Grounded Deliverability Tips & Sender Reputation Best Practices
+app.get("/api/campaign/deliverability-tips", async (req, res) => {
+  try {
+    const ai = getGeminiClient();
+
+    const prompt = `Perform a search on current (2024-2026) email deliverability standards, Google and Yahoo bulk sender policies, SPF, DKIM, DMARC enforcement, spam complaint thresholds, and sender reputation best practices.
+
+Provide a JSON object containing actionable tips organized into 4 clear categories for improving email sender reputation and staying out of spam folders.
+
+Return JSON in this format:
+{
+  "summary": "A concise 1-2 sentence overview of modern email deliverability standards and bulk sender rules.",
+  "categories": [
+    {
+      "title": "Domain Authentication & Protocols",
+      "icon": "shield",
+      "tips": [
+        "Enforce DMARC policy (p=none progressing to p=quarantine or p=reject) with exact alignment for SPF and DKIM.",
+        "Configure custom return-path (bounce domain) and custom tracking domains to match your sending domain."
+      ]
+    },
+    {
+      "title": "Sender Reputation & Spam Thresholds",
+      "icon": "chart",
+      "tips": [
+        "Keep spam complaint rates strictly below 0.10% (max 1 spam report per 1,000 emails) to meet Google & Yahoo requirements.",
+        "Gradually warm up new IP addresses and domains using highly engaged double opt-in subscribers."
+      ]
+    },
+    {
+      "title": "List Hygiene & Engagement Optimization",
+      "icon": "users",
+      "tips": [
+        "Implement automated sunset policies to suppress inactive subscribers after 60-90 days.",
+        "Include RFC 8058 compliant one-click unsubscribe headers in email headers."
+      ]
+    },
+    {
+      "title": "Content Safety & Link Alignment",
+      "icon": "mail",
+      "tips": [
+        "Maintain a healthy 60/40 text-to-image ratio and avoid generic URL shorteners.",
+        "Ensure all hyperlink domains match your verified sending domain to prevent phishing flags."
+      ]
+    }
+  ]
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+      },
+    });
+
+    const rawText = response.text || "{}";
+    let tipsData;
+    try {
+      tipsData = JSON.parse(rawText);
+    } catch {
+      tipsData = {
+        summary: "Modern deliverability requires strong domain authentication, strict spam rate caps (<0.1%), and clean engagement-first list management.",
+        categories: [],
+      };
+    }
+
+    // Extract grounding sources
+    const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+    const sources =
+      groundingMetadata?.groundingChunks
+        ?.map((chunk: any) => ({
+          title: chunk.web?.title || "Deliverability Guidelines Source",
+          url: chunk.web?.uri || "",
+        }))
+        .filter((s: any) => s.url && s.url.startsWith("http")) || [];
+
+    // Deduplicate sources by URL
+    const uniqueSources = Array.from(new Set(sources.map((s: any) => s.url)))
+      .map(url => sources.find((s: any) => s.url === url))
+      .slice(0, 5);
+
+    res.json({ success: true, tips: tipsData, sources: uniqueSources });
+  } catch (error: any) {
+    console.error("Error fetching deliverability tips:", error);
+    res.status(500).json({ error: error.message || "Failed to fetch deliverability tips." });
+  }
+});
+
 // Start Express and Vite middleware
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {

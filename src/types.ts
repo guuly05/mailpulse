@@ -44,6 +44,22 @@ export interface SpamScoreAnalysis {
   recommendations: string[];
 }
 
+export interface DeliverabilityCategory {
+  title: string;
+  icon?: string;
+  tips: string[];
+}
+
+export interface DeliverabilityTipsData {
+  summary: string;
+  categories: DeliverabilityCategory[];
+}
+
+export interface GroundingSource {
+  title: string;
+  url: string;
+}
+
 export interface CampaignVariant {
   variantName: string;
   hypothesis: string;
