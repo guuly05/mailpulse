@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { EmailCampaign } from "../types";
 import { generateEmailHTML } from "../utils/htmlGenerator";
-import { Code, Check, Copy, Download, FileText, Send, X, ExternalLink } from "lucide-react";
+import { generatePrintablePDFHTML } from "../utils/pdfGenerator";
+import { Code, Check, Copy, Download, FileText, Send, X, Printer, FileCheck } from "lucide-react";
 
 interface ExportModalProps {
   campaign: EmailCampaign;
@@ -9,7 +10,7 @@ interface ExportModalProps {
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ campaign, onClose }) => {
-  const [activeTab, setActiveTab] = useState<"html" | "text" | "test">("html");
+  const [activeTab, setActiveTab] = useState<"html" | "text" | "pdf" | "test">("html");
   const [selectedVariant, setSelectedVariant] = useState<"A" | "B">("A");
   const [copied, setCopied] = useState(false);
   const [testEmail, setTestEmail] = useState("subscriber@example.com");
@@ -36,6 +37,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ campaign, onClose }) =
       : campaign;
 
   const rawHTML = generateEmailHTML(activeCampaignToExport);
+  const printablePDFHTML = generatePrintablePDFHTML(activeCampaignToExport);
 
   const activeSubject =
     activeCampaignToExport.subjectLines[activeCampaignToExport.selectedSubjectIndex]?.text ||
@@ -78,6 +80,17 @@ To unsubscribe, click here.
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleDownloadPDF = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(printablePDFHTML);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 300);
   };
 
   const handleSendTest = (e: React.FormEvent) => {
@@ -135,30 +148,38 @@ To unsubscribe, click here.
         )}
 
         {/* Tab Switcher */}
-        <div className="flex space-x-1 my-4 bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0">
+        <div className="flex space-x-1 my-4 bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0 overflow-x-auto">
           <button
             onClick={() => setActiveTab("html")}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition ${
+            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition whitespace-nowrap ${
               activeTab === "html" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             HTML Email Code
           </button>
           <button
+            onClick={() => setActiveTab("pdf")}
+            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition whitespace-nowrap ${
+              activeTab === "pdf" ? "bg-purple-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            📄 PDF Document
+          </button>
+          <button
             onClick={() => setActiveTab("text")}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition ${
+            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition whitespace-nowrap ${
               activeTab === "text" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Plain Text Version
+            Plain Text
           </button>
           <button
             onClick={() => setActiveTab("test")}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition ${
+            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition whitespace-nowrap ${
               activeTab === "test" ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Send Test Preview
+            Send Test
           </button>
         </div>
 
@@ -172,6 +193,35 @@ To unsubscribe, click here.
               <pre className="bg-slate-950 p-4 rounded-xl text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-[320px] border border-slate-800 selection:bg-blue-500 selection:text-white">
                 {rawHTML}
               </pre>
+            </div>
+          )}
+
+          {activeTab === "pdf" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between bg-purple-950/40 border border-purple-500/30 p-3 rounded-xl">
+                <div className="flex items-center space-x-2 text-xs">
+                  <Printer className="w-4 h-4 text-purple-400 shrink-0" />
+                  <div>
+                    <span className="font-bold text-white block">Print-Ready Executive Campaign PDF</span>
+                    <span className="text-purple-300 text-[11px]">Formatted with metadata, subject line scoring, and layout brief.</span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleDownloadPDF}
+                  className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center space-x-1.5 shadow-md transition shrink-0"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Download / Print PDF</span>
+                </button>
+              </div>
+
+              <div className="border border-slate-800 rounded-xl overflow-hidden bg-white h-[320px] shadow-inner">
+                <iframe
+                  title="PDF Print Preview"
+                  srcDoc={printablePDFHTML}
+                  className="w-full h-full border-none"
+                />
+              </div>
             </div>
           )}
 
@@ -234,13 +284,23 @@ To unsubscribe, click here.
 
         {/* Footer Actions */}
         <div className="pt-4 border-t border-slate-800 flex items-center justify-between shrink-0">
-          <button
-            onClick={handleDownloadHTML}
-            className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold border border-slate-700 transition"
-          >
-            <Download className="w-4 h-4 text-slate-400" />
-            <span>Download .HTML File</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleDownloadHTML}
+              className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-700 transition"
+            >
+              <Download className="w-4 h-4 text-slate-400" />
+              <span>Download .HTML</span>
+            </button>
+
+            <button
+              onClick={handleDownloadPDF}
+              className="flex items-center space-x-1.5 bg-purple-900/50 hover:bg-purple-900/80 text-purple-200 px-3.5 py-2 rounded-xl text-xs font-semibold border border-purple-700/50 transition"
+            >
+              <Printer className="w-4 h-4 text-purple-400" />
+              <span>Save as PDF</span>
+            </button>
+          </div>
 
           <div className="flex items-center space-x-2">
             <button
@@ -250,12 +310,12 @@ To unsubscribe, click here.
               {copied ? (
                 <>
                   <Check className="w-4 h-4" />
-                  <span>Copied to Clipboard!</span>
+                  <span>Copied!</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-4 h-4" />
-                  <span>{activeTab === "text" ? "Copy Plain Text" : "Copy HTML Code"}</span>
+                  <span>{activeTab === "text" ? "Copy Plain Text" : "Copy HTML"}</span>
                 </>
               )}
             </button>
@@ -266,3 +326,4 @@ To unsubscribe, click here.
     </div>
   );
 };
+
