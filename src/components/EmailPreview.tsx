@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { EmailCampaign } from "../types";
+import { ReadabilityScoreBar } from "./ReadabilityScoreBar";
 import { Monitor, Smartphone, RefreshCw, Palette, Image as ImageIcon, Sparkles, Check, Copy, Tag, ExternalLink, ShieldCheck } from "lucide-react";
 
 interface EmailPreviewProps {
@@ -136,6 +137,15 @@ export const EmailPreview: React.FC<EmailPreviewProps> = ({
           <span className="font-semibold text-slate-300 shrink-0">Subject:</span>
           <span className="text-slate-200 font-medium truncate">{activeSubject}</span>
         </div>
+      </div>
+
+      {/* Flesch-Kincaid Readability Analysis Bar */}
+      <div className="px-4 sm:px-8 pt-3 bg-slate-950">
+        <ReadabilityScoreBar
+          bodyParagraphs={campaign.bodyParagraphs}
+          headline={campaign.headline}
+          subheadline={campaign.subheadline}
+        />
       </div>
 
       {/* Main Email Preview Canvas */}

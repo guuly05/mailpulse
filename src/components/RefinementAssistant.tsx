@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { EmailCampaign, SendTimeRecommendation } from "../types";
+import { ReadabilityScoreBar } from "./ReadabilityScoreBar";
 import {
   Sparkles,
   Send,
@@ -154,6 +155,15 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
             Adjust Schedule
           </button>
         </div>
+      )}
+
+      {/* Body Copy Readability Progress Bar */}
+      {campaign && (
+        <ReadabilityScoreBar
+          bodyParagraphs={campaign.bodyParagraphs}
+          headline={campaign.headline}
+          subheadline={campaign.subheadline}
+        />
       )}
 
       {/* Quick Refinement Chips */}
