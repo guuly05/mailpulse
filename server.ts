@@ -548,6 +548,56 @@ Return JSON in this format:
   }
 });
 
+// API Route: Send-Time Optimizer based on industry benchmarks
+app.post("/api/campaign/optimize-sendtime", async (req, res) => {
+  try {
+    const { campaign, overrideIndustry } = req.body;
+    if (!campaign) {
+      return res.status(400).json({ error: "Campaign parameter is required." });
+    }
+
+    const ai = getGeminiClient();
+
+    const prompt = `You are an expert email marketing deliverability and dispatch timing consultant.
+
+Analyze this campaign brief and identify or use the specified industry (${overrideIndustry || "auto-detect from campaign content"}):
+
+Campaign Title: ${campaign.campaignTitle}
+Brand Name: ${campaign.brandName}
+Headline: ${campaign.headline}
+Subheadline: ${campaign.subheadline || ""}
+Body Sample: ${campaign.bodyParagraphs?.[0] || ""}
+
+Task: Perform a data-backed benchmark analysis to determine the optimal day(s) of the week, time window, and specific ideal send slot to maximize open rates and conversions for this specific audience and industry.
+
+Return a valid JSON object matching this schema:
+{
+  "industry": "e.g. E-Commerce / Retail, B2B SaaS, Creator & Newsletter, Finance & FinTech, Healthcare, Local Services, etc.",
+  "bestDays": ["Tuesday", "Thursday"],
+  "bestTimeSlots": ["10:00 AM - 11:30 AM EST", "2:00 PM EST"],
+  "recommendedDateTime": "Tuesday at 10:15 AM EST",
+  "engagementBoost": "+22% projected open rate boost vs. weekend sends",
+  "reasoning": "1-2 sentence concise data-backed rationale explaining subscriber routines and peak inbox check times for this industry."
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      },
+    });
+
+    const rawText = response.text || "{}";
+    const recommendation = JSON.parse(rawText);
+
+    res.json({ success: true, recommendation });
+  } catch (error: any) {
+    console.error("Error optimizing send time:", error);
+    res.status(500).json({ error: error.message || "Failed to calculate optimal send time." });
+  }
+});
+
 // Start Express and Vite middleware
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {

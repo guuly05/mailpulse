@@ -60,6 +60,15 @@ export interface GroundingSource {
   url: string;
 }
 
+export interface SendTimeRecommendation {
+  industry: string;
+  bestDays: string[];
+  bestTimeSlots: string[];
+  recommendedDateTime: string;
+  engagementBoost: string;
+  reasoning: string;
+}
+
 export interface CampaignVariant {
   variantName: string;
   hypothesis: string;
@@ -108,6 +117,9 @@ export interface EmailCampaign {
   variantB?: CampaignVariant;
   winningVariant?: 'A' | 'B';
   isSplitTesting?: boolean;
+
+  // Send-Time Optimization
+  sendTimeRecommendation?: SendTimeRecommendation;
 }
 
 export interface CampaignGenerationOptions {

@@ -469,6 +469,8 @@ export default function App() {
             <RefinementAssistant
               onRefine={handleRefineCampaign}
               isRefining={isRefining}
+              campaign={activeCampaign}
+              onUpdateCampaign={(updated) => saveOrUpdateActiveCampaign(updated)}
             />
 
             {/* A/B Split Testing Comparator */}
