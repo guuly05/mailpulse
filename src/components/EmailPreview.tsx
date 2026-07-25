@@ -171,7 +171,7 @@ export const EmailPreview: React.FC<EmailPreviewProps> = ({
             {campaign.heroImageUrl ? (
               <img
                 src={campaign.heroImageUrl}
-                alt="Campaign AI Visual"
+                alt={campaign.heroImageAltText || campaign.headline || "Campaign AI Visual"}
                 className="w-full h-auto object-cover max-h-[360px]"
                 referrerPolicy="no-referrer"
               />

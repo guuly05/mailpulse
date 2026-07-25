@@ -78,6 +78,7 @@ export interface CampaignVariant {
   previewText: string;
   heroImagePrompt: string;
   heroImageUrl?: string;
+  heroImageAltText?: string;
   headline: string;
   subheadline: string;
   bodyParagraphs: string[];
@@ -97,6 +98,7 @@ export interface EmailCampaign {
   previewText: string;
   heroImagePrompt: string;
   heroImageUrl?: string;
+  heroImageAltText?: string;
   headline: string;
   subheadline: string;
   bodyParagraphs: string[];

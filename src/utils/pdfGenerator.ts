@@ -246,7 +246,7 @@ export function generatePrintablePDFHTML(campaign: EmailCampaign): string {
         campaign.heroImageUrl
           ? `<img src="${escapeHtml(
               campaign.heroImageUrl
-            )}" alt="Hero Banner" class="hero-img" />`
+            )}" alt="${escapeHtml(campaign.heroImageAltText || campaign.headline || "Hero Banner")}" class="hero-img" />`
           : ""
       }
 

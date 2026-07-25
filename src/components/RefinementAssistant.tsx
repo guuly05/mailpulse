@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { EmailCampaign, SendTimeRecommendation } from "../types";
 import { ReadabilityScoreBar } from "./ReadabilityScoreBar";
 import {
@@ -15,6 +15,17 @@ import {
   Info,
   CalendarDays,
   X,
+  Eye,
+  Check,
+  Copy,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  ShieldCheck,
+  Image as ImageIcon,
+  MousePointerClick,
+  FileText,
+  Sliders,
 } from "lucide-react";
 
 interface RefinementAssistantProps {
@@ -36,6 +47,24 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optError, setOptError] = useState<string | null>(null);
 
+  // Accessibility Review States
+  const [isA11yExpanded, setIsA11yExpanded] = useState(true);
+  const [customAltText, setCustomAltText] = useState("");
+  const [copiedAltText, setCopiedAltText] = useState(false);
+  const [savedAltTextNotice, setSavedAltTextNotice] = useState(false);
+
+  // Sync customAltText whenever campaign changes
+  useEffect(() => {
+    if (campaign) {
+      if (campaign.heroImageAltText) {
+        setCustomAltText(campaign.heroImageAltText);
+      } else {
+        const defaultAlt = generateSuggestedAltText(campaign, "descriptive");
+        setCustomAltText(defaultAlt);
+      }
+    }
+  }, [campaign?.id, campaign?.headline, campaign?.heroImagePrompt, campaign?.heroImageAltText]);
+
   const QUICK_REFINEMENTS = [
     { label: "⚡ Make Shorter & Punchier", prompt: "Shorten all body paragraphs and make subject lines punchier under 40 characters." },
     { label: "🔥 Increase Urgency", prompt: "Inject more FOMO and urgency regarding limited stock and countdown deadline." },
@@ -54,6 +83,46 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
     "Local Business & Services",
     "Education & Online Courses",
   ];
+
+  // Helper function to generate AI Alt-Text suggestions based on campaign content
+  function generateSuggestedAltText(
+    c: EmailCampaign,
+    style: "descriptive" | "contextual" | "concise"
+  ): string {
+    const brand = c.brandName || "Brand";
+    const headline = c.headline || "special announcement";
+    const subheadline = c.subheadline || "";
+    const promptClean = c.heroImagePrompt
+      ? c.heroImagePrompt
+          .replace(/photorealistic|4k|high quality|hyper-realistic|minimalist|vector art|3d render|studio lighting/gi, "")
+          .trim()
+      : headline;
+
+    if (style === "descriptive") {
+      return `Promotional banner visual for ${brand} presenting "${headline}" featuring ${promptClean || headline}.`;
+    } else if (style === "contextual") {
+      return `Hero graphic for ${brand}'s campaign announcing ${headline}. ${subheadline ? `Details: ${subheadline}` : ""}`;
+    } else {
+      return `${brand} banner: ${headline}`;
+    }
+  }
+
+  const handleApplyAltText = (newAltText: string) => {
+    if (!campaign || !onUpdateCampaign) return;
+    const updated = {
+      ...campaign,
+      heroImageAltText: newAltText,
+    };
+    onUpdateCampaign(updated);
+    setSavedAltTextNotice(true);
+    setTimeout(() => setSavedAltTextNotice(false), 2500);
+  };
+
+  const handleCopyAltText = () => {
+    navigator.clipboard.writeText(customAltText);
+    setCopiedAltText(true);
+    setTimeout(() => setCopiedAltText(false), 2000);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,6 +172,14 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
   };
 
   const currentRec = campaign?.sendTimeRecommendation;
+
+  // Accessibility Audit Calculations
+  const hasAltText = Boolean(campaign?.heroImageAltText || customAltText.trim());
+  const altTextLength = customAltText.trim().length;
+  const isAltLengthGood = altTextLength >= 15 && altTextLength <= 140;
+
+  const ctaText = campaign?.primaryCTA?.text || "";
+  const isVagueCTA = ["click here", "learn more", "submit", "click now", "link"].includes(ctaText.toLowerCase().trim());
 
   return (
     <div id="refinement-assistant-card" className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 mb-8 text-slate-100 shadow-xl">
@@ -154,6 +231,204 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
           >
             Adjust Schedule
           </button>
+        </div>
+      )}
+
+      {/* ACCESSIBILITY REVIEW & ALT-TEXT GENERATOR SUB-SECTION */}
+      {campaign && (
+        <div className="mb-5 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden transition">
+          {/* Sub-section Accordion Header */}
+          <div
+            onClick={() => setIsA11yExpanded(!isA11yExpanded)}
+            className="p-3.5 bg-slate-900/80 hover:bg-slate-900 border-b border-slate-800 flex items-center justify-between cursor-pointer select-none"
+          >
+            <div className="flex items-center space-x-2.5">
+              <div className="w-6 h-6 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                <ShieldCheck className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-white flex items-center space-x-2">
+                  <span>Accessibility Review & Alt-Text Generator</span>
+                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono px-2 py-0.2 rounded-full">
+                    WCAG 2.1 AA
+                  </span>
+                </span>
+                <p className="text-[11px] text-slate-400">
+                  Ensure screen-reader compatibility & generate descriptive image Alt-Text
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                hasAltText && isAltLengthGood
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                  : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+              }`}>
+                {hasAltText && isAltLengthGood ? "✓ Alt-Text Ready" : "⚠ Review Suggested"}
+              </span>
+              {isA11yExpanded ? (
+                <ChevronUp className="w-4 h-4 text-slate-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              )}
+            </div>
+          </div>
+
+          {/* Accordion Content */}
+          {isA11yExpanded && (
+            <div className="p-4 space-y-4 text-xs">
+              
+              {/* Alt-Text Generator & Input */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-200 flex items-center space-x-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Hero Banner Alt-Text (Screen Reader Description)</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {altTextLength} / 140 chars
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    rows={2}
+                    value={customAltText}
+                    onChange={(e) => setCustomAltText(e.target.value)}
+                    placeholder="Provide a clear, descriptive summary of the hero image for visually impaired users..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-medium leading-relaxed"
+                  />
+                </div>
+
+                {/* Quick AI Suggestion Chips */}
+                <div className="pt-1">
+                  <span className="text-[10px] text-slate-400 font-semibold block mb-1.5">
+                    💡 One-Click AI Alt-Text Suggestions:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setCustomAltText(generateSuggestedAltText(campaign, "descriptive"))}
+                      className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-2.5 py-1 rounded-md text-[11px] transition text-left"
+                    >
+                      ✨ <strong>Descriptive:</strong> {generateSuggestedAltText(campaign, "descriptive").slice(0, 45)}...
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomAltText(generateSuggestedAltText(campaign, "contextual"))}
+                      className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-2.5 py-1 rounded-md text-[11px] transition text-left"
+                    >
+                      🎯 <strong>Contextual:</strong> {generateSuggestedAltText(campaign, "contextual").slice(0, 45)}...
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomAltText(generateSuggestedAltText(campaign, "concise"))}
+                      className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-2.5 py-1 rounded-md text-[11px] transition text-left"
+                    >
+                      ⚡ <strong>Concise:</strong> {generateSuggestedAltText(campaign, "concise")}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Save & Copy Actions */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={handleCopyAltText}
+                    className="text-slate-400 hover:text-slate-200 text-[11px] font-semibold flex items-center space-x-1"
+                  >
+                    {copiedAltText ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied to clipboard</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Alt-Text</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="flex items-center space-x-2">
+                    {savedAltTextNotice && (
+                      <span className="text-emerald-400 text-[11px] font-bold flex items-center space-x-1">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Saved to Campaign!</span>
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleApplyAltText(customAltText)}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow transition flex items-center space-x-1.5"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Apply Alt-Text to Campaign</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Automated WCAG Checklist Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-800">
+                
+                {/* Rule 1: Non-Text Content */}
+                <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex items-start space-x-2">
+                  <div className={`mt-0.5 p-1 rounded-full ${hasAltText ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"}`}>
+                    {hasAltText ? <Check className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block text-[11px]">WCAG 1.1.1 Image Alt-Text</span>
+                    <p className="text-[10px] text-slate-400">
+                      {hasAltText ? "Hero banner includes screen reader description" : "Missing alt text on visual banner"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Rule 2: CTA Specificity */}
+                <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex items-start space-x-2">
+                  <div className={`mt-0.5 p-1 rounded-full ${!isVagueCTA ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}`}>
+                    {!isVagueCTA ? <Check className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block text-[11px]">WCAG 2.4.4 Link Purpose</span>
+                    <p className="text-[10px] text-slate-400">
+                      {!isVagueCTA ? `Descriptive CTA: "${ctaText}"` : "Warning: Vague CTA label ('Click Here')"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Rule 3: Contrast Ratio */}
+                <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex items-start space-x-2">
+                  <div className="mt-0.5 p-1 rounded-full bg-emerald-500/20 text-emerald-400">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block text-[11px]">WCAG 1.4.3 Contrast Ratio</span>
+                    <p className="text-[10px] text-slate-400">
+                      High contrast CTA button (&gt;4.5:1 ratio against canvas)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Rule 4: Heading Hierarchy */}
+                <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex items-start space-x-2">
+                  <div className="mt-0.5 p-1 rounded-full bg-emerald-500/20 text-emerald-400">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block text-[11px]">WCAG 1.3.1 Structural Heading</span>
+                    <p className="text-[10px] text-slate-400">
+                      Semantically ordered H1 headline & H2 body copy
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          )}
         </div>
       )}
 

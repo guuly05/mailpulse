@@ -107,7 +107,7 @@ export function generateEmailHTML(campaign: EmailCampaign): string {
               ? `
           <tr>
             <td align="center" style="padding: 0;">
-              <img src="${escapeHtml(campaign.heroImageUrl)}" alt="Campaign Visual Banner" width="600" style="width: 100%; max-width: 600px; height: auto; display: block; border: 0;" />
+              <img src="${escapeHtml(campaign.heroImageUrl)}" alt="${escapeHtml(campaign.heroImageAltText || campaign.headline || "Campaign Visual Banner")}" width="600" style="width: 100%; max-width: 600px; height: auto; display: block; border: 0;" />
             </td>
           </tr>
           `
