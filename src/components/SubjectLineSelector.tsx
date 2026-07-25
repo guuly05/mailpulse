@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { SubjectLine } from "../types";
-import { CheckCircle2, Flame, HelpCircle, Target, Sparkles, Edit3, Save, AlertCircle } from "lucide-react";
+import { CheckCircle2, Flame, HelpCircle, Target, Sparkles, Edit3, Save, AlertCircle, Eye } from "lucide-react";
 
 interface SubjectLineSelectorProps {
   subjectLines: SubjectLine[];
@@ -82,7 +82,7 @@ export const SubjectLineSelector: React.FC<SubjectLineSelectorProps> = ({
 
   return (
     <div id="subject-line-selector-card" className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 mb-8 text-slate-100">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h3 className="text-lg font-bold text-white flex items-center space-x-2">
             <span>AI Subject Lines & Inbox Preview</span>
@@ -94,6 +94,18 @@ export const SubjectLineSelector: React.FC<SubjectLineSelectorProps> = ({
             Select your primary subject line. High predicted open-rate subject lines improve campaign deliverability.
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            const simEl = document.getElementById("inbox-simulation-container");
+            if (simEl) simEl.scrollIntoView({ behavior: "smooth" });
+          }}
+          className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition shrink-0 self-start sm:self-auto"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>Simulate Inboxes</span>
+        </button>
       </div>
 
       {/* Subject Lines Grid */}

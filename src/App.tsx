@@ -10,6 +10,7 @@ import { ExportModal } from "./components/ExportModal";
 import { SavedCampaignsDrawer } from "./components/SavedCampaignsDrawer";
 import { SplitTestComparator } from "./components/SplitTestComparator";
 import { CampaignPerformance } from "./components/CampaignPerformance";
+import { InboxSimulation } from "./components/InboxSimulation";
 import { Sparkles, AlertCircle, RefreshCw, Wand2 } from "lucide-react";
 
 const LOCAL_STORAGE_KEY = "mailpulse_saved_campaigns_v1";
@@ -461,6 +462,21 @@ export default function App() {
                 const updatedSubjectLines = [...activeCampaign.subjectLines];
                 updatedSubjectLines[idx].text = newText;
                 const updated = { ...activeCampaign, subjectLines: updatedSubjectLines };
+                saveOrUpdateActiveCampaign(updated);
+              }}
+            />
+
+            {/* Visual Inbox Simulation Across Clients */}
+            <InboxSimulation
+              campaign={activeCampaign}
+              onUpdateSubjectText={(idx, newText) => {
+                const updatedSubjectLines = [...activeCampaign.subjectLines];
+                updatedSubjectLines[idx].text = newText;
+                const updated = { ...activeCampaign, subjectLines: updatedSubjectLines };
+                saveOrUpdateActiveCampaign(updated);
+              }}
+              onUpdatePreviewText={(newText) => {
+                const updated = { ...activeCampaign, previewText: newText };
                 saveOrUpdateActiveCampaign(updated);
               }}
             />
