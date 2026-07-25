@@ -1,7 +1,63 @@
 import React, { useState } from "react";
 import { EmailCampaign } from "../types";
 import { ReadabilityScoreBar } from "./ReadabilityScoreBar";
-import { Monitor, Smartphone, RefreshCw, Palette, Image as ImageIcon, Sparkles, Check, Copy, Tag, ExternalLink, ShieldCheck } from "lucide-react";
+import { Monitor, Smartphone, RefreshCw, Palette, Image as ImageIcon, Sparkles, Check, Copy, Tag, ExternalLink, ShieldCheck, Flame, AlertCircle, Info } from "lucide-react";
+
+interface SentenceAnalysis {
+  text: string;
+  wordCount: number;
+  level: "easy" | "moderate" | "complex";
+  reason: string;
+}
+
+function analyzeParagraphSentences(paragraphText: string): {
+  sentences: SentenceAnalysis[];
+  totalWords: number;
+  complexCount: number;
+  moderateCount: number;
+  easyCount: number;
+} {
+  const rawSentences = paragraphText.match(/[^.!?]+[.!?]+(?=\s|$)|[^.!?]+$/g) || [paragraphText];
+  let totalWords = 0;
+  let complexCount = 0;
+  let moderateCount = 0;
+  let easyCount = 0;
+
+  const sentences: SentenceAnalysis[] = rawSentences.map((s) => {
+    const trimmed = s.trim();
+    if (!trimmed) return { text: s, wordCount: 0, level: "easy", reason: "" };
+
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    const wordCount = words.length;
+    totalWords += wordCount;
+
+    const longWords = words.filter((w) => w.replace(/[^a-zA-Z]/g, "").length >= 9);
+
+    let level: "easy" | "moderate" | "complex" = "easy";
+    let reason = `${wordCount} words. Short & punchy sentence.`;
+
+    if (wordCount >= 24 || (wordCount >= 18 && longWords.length >= 3)) {
+      level = "complex";
+      complexCount++;
+      reason = `⚠ High Complexity (${wordCount} words, ${longWords.length} long words). Recommend splitting into 2 shorter sentences.`;
+    } else if (wordCount >= 15 || longWords.length >= 2) {
+      level = "moderate";
+      moderateCount++;
+      reason = `Moderate length (${wordCount} words). Consider punchier phrasing.`;
+    } else {
+      easyCount++;
+    }
+
+    return {
+      text: s,
+      wordCount,
+      level,
+      reason,
+    };
+  });
+
+  return { sentences, totalWords, complexCount, moderateCount, easyCount };
+}
 
 interface EmailPreviewProps {
   campaign: EmailCampaign;
@@ -18,6 +74,7 @@ export const EmailPreview: React.FC<EmailPreviewProps> = ({
 }) => {
   const [deviceMode, setDeviceMode] = useState<"desktop" | "mobile">("desktop");
   const [isEditingMode, setIsEditingMode] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
   const [customImagePrompt, setCustomImagePrompt] = useState(campaign.heroImagePrompt || "");
   const [showImagePromptModal, setShowImagePromptModal] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -101,6 +158,18 @@ export const EmailPreview: React.FC<EmailPreviewProps> = ({
           >
             {isEditingMode ? "✓ Done Editing" : "✏️ Edit Copy & Styling"}
           </button>
+
+          <button
+            onClick={() => setShowHeatmap(!showHeatmap)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition flex items-center space-x-1.5 ${
+              showHeatmap
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 ring-1 ring-amber-500/30"
+                : "bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700"
+            }`}
+          >
+            <Flame className={`w-4 h-4 ${showHeatmap ? "text-amber-400 animate-pulse" : "text-slate-400"}`} />
+            <span>{showHeatmap ? "🔥 Heatmap Active" : "🔥 Readability Heatmap"}</span>
+          </button>
         </div>
 
         {/* Color Palette Quick Accent */}
@@ -147,6 +216,40 @@ export const EmailPreview: React.FC<EmailPreviewProps> = ({
           subheadline={campaign.subheadline}
         />
       </div>
+
+      {/* Readability Heatmap Legend Banner */}
+      {showHeatmap && (
+        <div className="mx-4 sm:mx-8 mt-3 bg-slate-900 border border-amber-500/40 rounded-xl p-3.5 text-xs text-slate-100 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-amber-500/20 border border-amber-500/40 rounded-lg text-amber-400 shrink-0">
+              <Flame className="w-4 h-4 animate-pulse" />
+            </div>
+            <div>
+              <div className="font-bold text-amber-200 text-xs flex items-center space-x-2">
+                <span>Sentence Complexity & Readability Heatmap</span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Hover over highlighted sentences directly on the email body below to view word counts & simplification guidance.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+            <span className="flex items-center space-x-1 bg-emerald-100 text-emerald-950 px-2.5 py-0.5 rounded border border-emerald-300 font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>Easy (≤14 words)</span>
+            </span>
+            <span className="flex items-center space-x-1 bg-amber-100 text-amber-950 px-2.5 py-0.5 rounded border border-amber-300 font-bold">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span>Moderate (15–23 words)</span>
+            </span>
+            <span className="flex items-center space-x-1 bg-rose-200 text-rose-950 px-2.5 py-0.5 rounded border border-rose-400 font-bold shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-rose-600" />
+              <span>Complex (≥24 words)</span>
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main Email Preview Canvas */}
       <div className="bg-slate-950 p-4 sm:p-8 flex justify-center overflow-x-auto min-h-[600px]">
@@ -238,22 +341,90 @@ export const EmailPreview: React.FC<EmailPreviewProps> = ({
 
             {/* Body Paragraphs */}
             <div className="space-y-4">
-              {campaign.bodyParagraphs.map((para, idx) => (
-                <div key={idx}>
-                  {isEditingMode ? (
-                    <textarea
-                      rows={3}
-                      value={para}
-                      onChange={(e) => handleParagraphChange(idx, e.target.value)}
-                      className="w-full text-sm text-slate-700 border border-slate-300 rounded p-2 focus:outline-none focus:border-blue-500"
-                    />
-                  ) : (
+              {campaign.bodyParagraphs.map((para, idx) => {
+                if (isEditingMode) {
+                  return (
+                    <div key={idx}>
+                      <textarea
+                        rows={3}
+                        value={para}
+                        onChange={(e) => handleParagraphChange(idx, e.target.value)}
+                        className="w-full text-sm text-slate-700 border border-slate-300 rounded p-2 focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  );
+                }
+
+                if (showHeatmap) {
+                  const analysis = analyzeParagraphSentences(para);
+
+                  return (
+                    <div key={idx} className="rounded-xl border border-amber-200 bg-amber-50/20 p-3.5 relative my-2 transition shadow-xs">
+                      {/* Paragraph Header Stats */}
+                      <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-slate-500 mb-2 pb-1.5 border-b border-amber-200/80">
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-slate-800 text-white px-2 py-0.5 rounded text-[10px] font-bold">
+                            Paragraph {idx + 1}
+                          </span>
+                          <span>{analysis.totalWords} words ({analysis.sentences.length} sentence{analysis.sentences.length > 1 ? 's' : ''})</span>
+                        </div>
+
+                        <div>
+                          {analysis.complexCount > 0 ? (
+                            <span className="bg-rose-100 text-rose-800 border border-rose-300 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center space-x-1">
+                              <AlertCircle className="w-3 h-3 text-rose-600" />
+                              <span>{analysis.complexCount} complex sentence{analysis.complexCount > 1 ? 's' : ''}</span>
+                            </span>
+                          ) : analysis.moderateCount > 0 ? (
+                            <span className="bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              Moderate Complexity
+                            </span>
+                          ) : (
+                            <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              ✓ Easy to Read
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Sentence-by-sentence highlights */}
+                      <div className="text-sm sm:text-base leading-relaxed space-x-1">
+                        {analysis.sentences.map((sObj, sIdx) => {
+                          let highlightClass = "";
+                          if (sObj.level === "complex") {
+                            highlightClass = "bg-rose-200/90 text-rose-950 font-medium px-1.5 py-0.5 rounded border-b-2 border-rose-500 hover:bg-rose-300 transition relative group cursor-help";
+                          } else if (sObj.level === "moderate") {
+                            highlightClass = "bg-amber-200/80 text-amber-950 font-medium px-1.5 py-0.5 rounded border-b-2 border-amber-500 hover:bg-amber-300 transition relative group cursor-help";
+                          } else {
+                            highlightClass = "bg-emerald-100/70 text-slate-900 px-1 py-0.5 rounded border-b border-emerald-400/50 hover:bg-emerald-200 transition relative group cursor-help";
+                          }
+
+                          return (
+                            <span key={sIdx} className={`${highlightClass} inline-block my-0.5 me-1`}>
+                              {sObj.text}
+                              {/* Hover Tooltip */}
+                              <span className="absolute left-1/2 -top-1 transform -translate-x-1/2 -translate-y-full hidden group-hover:block z-30 w-60 bg-slate-900 text-slate-100 text-[11px] p-2.5 rounded-xl shadow-2xl border border-slate-700 pointer-events-none font-sans font-normal leading-tight">
+                                <span className="font-bold text-amber-400 block mb-0.5">
+                                  Sentence #{sIdx + 1} ({sObj.wordCount} words)
+                                </span>
+                                <span className="text-slate-300">{sObj.reason}</span>
+                              </span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={idx}>
                     <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
                       {para}
                     </p>
-                  )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Promo Code Coupon Card */}
