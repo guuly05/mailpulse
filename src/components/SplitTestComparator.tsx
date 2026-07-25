@@ -17,6 +17,11 @@ import {
   Edit3,
   Layers,
   ArrowLeftRight,
+  MousePointerClick,
+  Palette,
+  BarChart3,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 
 interface SplitTestComparatorProps {
@@ -26,6 +31,113 @@ interface SplitTestComparatorProps {
   isGeneratingVariant: boolean;
   onRegenerateImageB?: (prompt: string) => void;
   isGeneratingImageB?: boolean;
+}
+
+const COLOR_PRESETS = [
+  { name: "Brand Blue", hex: "#3b82f6" },
+  { name: "High-Vis Orange", hex: "#f97316" },
+  { name: "Conversion Green", hex: "#10b981" },
+  { name: "Vibrant Purple", hex: "#8b5cf6" },
+  { name: "Urgency Red", hex: "#ef4444" },
+  { name: "Midnight Slate", hex: "#0f172a" },
+];
+
+interface SimulatedCTRMetrics {
+  predictedCTR: number;
+  predictedCTOR: number;
+  scoreRating: "Optimal" | "Strong" | "Average" | "Needs Boost";
+  boostReason: string;
+  badgeClass: string;
+}
+
+function calculateSimulatedPerformance(
+  ctaText: string,
+  ctaColor?: string,
+  openRateScore: number = 85,
+  defaultColor: string = "#3b82f6"
+): SimulatedCTRMetrics {
+  const openScore = Math.max(50, openRateScore || 85);
+  let baseCTR = (openScore / 100) * 4.2;
+
+  const text = (ctaText || "").toLowerCase();
+  const color = (ctaColor || defaultColor).toLowerCase();
+
+  // Action / Power words bonus
+  const powerWords = [
+    "get",
+    "claim", "unlock",
+    "start",
+    "free",
+    "now",
+    "my",
+    "save",
+    "discount",
+    "access",
+    "instant",
+    "grab",
+    "join",
+    "try",
+    "shop",
+  ];
+  let powerWordBonus = 0;
+  powerWords.forEach((word) => {
+    if (text.includes(word)) powerWordBonus += 0.4;
+  });
+  powerWordBonus = Math.min(1.6, powerWordBonus);
+
+  // Conciseness Bonus
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  let lengthBonus = 0;
+  if (wordCount >= 2 && wordCount <= 5) {
+    lengthBonus = 0.6;
+  } else if (wordCount === 1) {
+    lengthBonus = 0.2;
+  }
+
+  // Color Contrast / Visibility Bonus
+  let colorBonus = 0.3;
+  if (color.includes("f97316") || color.includes("orange")) {
+    colorBonus = 1.25; // High visibility contrast
+  } else if (color.includes("10b981") || color.includes("emerald") || color.includes("green")) {
+    colorBonus = 1.1;
+  } else if (color.includes("8b5cf6") || color.includes("purple")) {
+    colorBonus = 0.7;
+  } else if (color.includes("ef4444") || color.includes("red")) {
+    colorBonus = 0.8;
+  }
+
+  const predictedCTR = Number((baseCTR + powerWordBonus + lengthBonus + colorBonus).toFixed(1));
+  const predictedCTOR = Number(((predictedCTR / (openScore / 100)) * 4.2).toFixed(1));
+
+  let scoreRating: "Optimal" | "Strong" | "Average" | "Needs Boost" = "Average";
+  let badgeClass = "bg-slate-800 text-slate-300 border-slate-700";
+  let boostReason = "Standard expected click performance.";
+
+  if (predictedCTR >= 6.4) {
+    scoreRating = "Optimal";
+    badgeClass = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+    boostReason = "High-contrast CTA color & direct value verbs maximize click intent.";
+  } else if (predictedCTR >= 5.0) {
+    scoreRating = "Strong";
+    badgeClass = "bg-blue-500/10 text-blue-400 border-blue-500/30";
+    boostReason = "Action-oriented phrasing with solid visual hierarchy.";
+  } else if (predictedCTR >= 3.8) {
+    scoreRating = "Average";
+    badgeClass = "bg-amber-500/10 text-amber-400 border-amber-500/30";
+    boostReason = "Consider testing high-vis orange/green or first-person verbs ('Get My Discount').";
+  } else {
+    scoreRating = "Needs Boost";
+    badgeClass = "bg-rose-500/10 text-rose-400 border-rose-500/30";
+    boostReason = "Passive CTA label. Test urgent action verbs or high-visibility colors.";
+  }
+
+  return {
+    predictedCTR,
+    predictedCTOR,
+    scoreRating,
+    boostReason,
+    badgeClass,
+  };
 }
 
 export const SplitTestComparator: React.FC<SplitTestComparatorProps> = ({
@@ -87,10 +199,69 @@ export const SplitTestComparator: React.FC<SplitTestComparatorProps> = ({
     });
   };
 
+  const handleUpdateCTATextA = (text: string) => {
+    onUpdateCampaign({
+      ...campaign,
+      primaryCTA: {
+        ...campaign.primaryCTA,
+        text,
+      },
+    });
+  };
+
+  const handleUpdateCTAColorA = (buttonColor: string) => {
+    onUpdateCampaign({
+      ...campaign,
+      primaryCTA: {
+        ...campaign.primaryCTA,
+        buttonColor,
+      },
+    });
+  };
+
+  const handleUpdateCTATextB = (text: string) => {
+    if (!variantB) return;
+    onUpdateCampaign({
+      ...campaign,
+      variantB: {
+        ...variantB,
+        primaryCTA: {
+          ...variantB.primaryCTA,
+          text,
+        },
+      },
+    });
+  };
+
+  const handleUpdateCTAColorB = (buttonColor: string) => {
+    if (!variantB) return;
+    onUpdateCampaign({
+      ...campaign,
+      variantB: {
+        ...variantB,
+        primaryCTA: {
+          ...variantB.primaryCTA,
+          buttonColor,
+        },
+      },
+    });
+  };
+
   const currentSubjectA =
     campaign.subjectLines[campaign.selectedSubjectIndex]?.text || campaign.subjectLines[0]?.text;
   const currentSubjectB =
     variantB?.subjectLines[variantB.selectedSubjectIndex]?.text || variantB?.subjectLines[0]?.text;
+
+  const ctaColorA = campaign.primaryCTA.buttonColor || campaign.primaryColor || "#3b82f6";
+  const ctaColorB = variantB?.primaryCTA?.buttonColor || "#f97316";
+
+  const openRateA = campaign.subjectLines[campaign.selectedSubjectIndex]?.openRateScore || 85;
+  const metricsA = calculateSimulatedPerformance(campaign.primaryCTA.text, ctaColorA, openRateA, campaign.primaryColor);
+
+  const openRateB = variantB?.subjectLines[variantB?.selectedSubjectIndex || 0]?.openRateScore || 88;
+  const metricsB = variantB
+    ? calculateSimulatedPerformance(variantB.primaryCTA.text, ctaColorB, openRateB, "#f97316")
+    : null;
 
   return (
     <div id="split-test-comparator-container" className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-8 text-slate-100 shadow-2xl mb-8">
@@ -330,17 +501,106 @@ export const SplitTestComparator: React.FC<SplitTestComparatorProps> = ({
                     </div>
                   </div>
 
-                  {/* CTA & Offer */}
-                  <div className="flex items-center justify-between p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Call To Action</span>
-                      <span className="text-xs font-bold text-white">{campaign.primaryCTA.text}</span>
+                  {/* CTA & Color A/B Testing Box */}
+                  <div className="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-3.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                      <div className="flex items-center space-x-2">
+                        <MousePointerClick className="w-4 h-4 text-blue-400" />
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">CTA Button Customizer</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">Variant A Control</span>
                     </div>
-                    {campaign.promoOffer?.offerCode && (
-                      <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-mono font-bold px-2.5 py-1 rounded-md">
-                        {campaign.promoOffer.offerCode}
-                      </span>
-                    )}
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1 font-medium">CTA Button Label</label>
+                        <input
+                          type="text"
+                          value={campaign.primaryCTA.text}
+                          onChange={(e) => handleUpdateCTATextA(e.target.value)}
+                          placeholder="e.g. Claim My 20% Discount"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 font-semibold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1 font-medium flex items-center justify-between">
+                          <span>CTA Button Color</span>
+                          <span className="text-[10px] font-mono" style={{ color: ctaColorA }}>{ctaColorA}</span>
+                        </label>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {COLOR_PRESETS.map((preset) => (
+                            <button
+                              key={preset.hex}
+                              type="button"
+                              title={preset.name}
+                              onClick={() => handleUpdateCTAColorA(preset.hex)}
+                              className={`w-6 h-6 rounded-full border transition transform hover:scale-110 flex items-center justify-center ${
+                                ctaColorA.toLowerCase() === preset.hex.toLowerCase()
+                                  ? "border-white ring-2 ring-blue-500 scale-105"
+                                  : "border-slate-700 hover:border-slate-400"
+                              }`}
+                              style={{ backgroundColor: preset.hex }}
+                            >
+                              {ctaColorA.toLowerCase() === preset.hex.toLowerCase() && (
+                                <Check className="w-3 h-3 text-white drop-shadow" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-1 text-center">
+                        <button
+                          style={{ backgroundColor: ctaColorA }}
+                          className="px-5 py-2 rounded-lg text-white font-bold text-xs shadow-md transition transform active:scale-95 inline-flex items-center space-x-1.5"
+                        >
+                          <span>{campaign.primaryCTA.text || "Click Here"}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Simulated Performance Widget */}
+                    <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2 mt-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-200">
+                          <TrendingUp className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Simulated Performance</span>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${metricsA.badgeClass}`}>
+                          {metricsA.scoreRating}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5 pt-1">
+                        <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800/80">
+                          <span className="text-[10px] text-slate-400 block">Predicted CTR</span>
+                          <div className="text-base font-extrabold text-blue-400 font-mono flex items-baseline space-x-1">
+                            <span>{metricsA.predictedCTR}%</span>
+                            <span className="text-[10px] text-slate-500 font-normal">clicks</span>
+                          </div>
+                          <div className="w-full bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                            <div
+                              className="bg-blue-500 h-full rounded-full transition-all duration-500"
+                              style={{ width: `${Math.min(100, (metricsA.predictedCTR / 10) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800/80">
+                          <span className="text-[10px] text-slate-400 block">Click-to-Open</span>
+                          <div className="text-base font-extrabold text-purple-400 font-mono">
+                            {metricsA.predictedCTOR}%
+                          </div>
+                          <span className="text-[9px] text-slate-500 block mt-0.5">Est. CTOR rate</span>
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-slate-400 italic pt-1 border-t border-slate-800/60 leading-tight">
+                        💡 {metricsA.boostReason}
+                      </p>
+                    </div>
                   </div>
 
                   {/* Spam Score Badge */}
@@ -461,16 +721,132 @@ export const SplitTestComparator: React.FC<SplitTestComparatorProps> = ({
                     </div>
                   </div>
 
-                  {/* CTA & Offer */}
-                  <div className="flex items-center justify-between p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Call To Action</span>
-                      <span className="text-xs font-bold text-white">{variantB.primaryCTA.text}</span>
+                  {/* CTA & Color A/B Testing Box B */}
+                  <div className="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-3.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                      <div className="flex items-center space-x-2">
+                        <MousePointerClick className="w-4 h-4 text-indigo-400" />
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">CTA Button Customizer</span>
+                      </div>
+                      <span className="text-[10px] text-indigo-300 font-mono">Variant B Challenger</span>
                     </div>
-                    {variantB.promoOffer?.offerCode && (
-                      <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-mono font-bold px-2.5 py-1 rounded-md">
-                        {variantB.promoOffer.offerCode}
-                      </span>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1 font-medium">CTA Button Label</label>
+                        <input
+                          type="text"
+                          value={variantB.primaryCTA.text}
+                          onChange={(e) => handleUpdateCTATextB(e.target.value)}
+                          placeholder="e.g. Unlock My Free Access"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-semibold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] text-slate-400 block mb-1 font-medium flex items-center justify-between">
+                          <span>CTA Button Color</span>
+                          <span className="text-[10px] font-mono" style={{ color: ctaColorB }}>{ctaColorB}</span>
+                        </label>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {COLOR_PRESETS.map((preset) => (
+                            <button
+                              key={preset.hex}
+                              type="button"
+                              title={preset.name}
+                              onClick={() => handleUpdateCTAColorB(preset.hex)}
+                              className={`w-6 h-6 rounded-full border transition transform hover:scale-110 flex items-center justify-center ${
+                                ctaColorB.toLowerCase() === preset.hex.toLowerCase()
+                                  ? "border-white ring-2 ring-indigo-500 scale-105"
+                                  : "border-slate-700 hover:border-slate-400"
+                              }`}
+                              style={{ backgroundColor: preset.hex }}
+                            >
+                              {ctaColorB.toLowerCase() === preset.hex.toLowerCase() && (
+                                <Check className="w-3 h-3 text-white drop-shadow" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-1 text-center">
+                        <button
+                          style={{ backgroundColor: ctaColorB }}
+                          className="px-5 py-2 rounded-lg text-white font-bold text-xs shadow-md transition transform active:scale-95 inline-flex items-center space-x-1.5"
+                        >
+                          <span>{variantB.primaryCTA.text || "Click Here"}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Simulated Performance Widget */}
+                    {metricsB && (
+                      <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2 mt-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-200">
+                            <TrendingUp className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Simulated Performance</span>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${metricsB.badgeClass}`}>
+                            {metricsB.scoreRating}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5 pt-1">
+                          <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800/80">
+                            <span className="text-[10px] text-slate-400 block">Predicted CTR</span>
+                            <div className="text-base font-extrabold text-indigo-400 font-mono flex items-baseline space-x-1">
+                              <span>{metricsB.predictedCTR}%</span>
+                              <span className="text-[10px] text-slate-500 font-normal">clicks</span>
+                            </div>
+                            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                              <div
+                                className="bg-indigo-500 h-full rounded-full transition-all duration-500"
+                                style={{ width: `${Math.min(100, (metricsB.predictedCTR / 10) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800/80">
+                            <span className="text-[10px] text-slate-400 block">Click-to-Open</span>
+                            <div className="text-base font-extrabold text-purple-400 font-mono">
+                              {metricsB.predictedCTOR}%
+                            </div>
+                            <span className="text-[9px] text-slate-500 block mt-0.5">Est. CTOR rate</span>
+                          </div>
+                        </div>
+
+                        {/* Comparative Delta Badge */}
+                        {(() => {
+                          const delta = Number((metricsB.predictedCTR - metricsA.predictedCTR).toFixed(1));
+                          const percentChange = metricsA.predictedCTR > 0
+                            ? Math.round((delta / metricsA.predictedCTR) * 100)
+                            : 0;
+
+                          if (delta > 0) {
+                            return (
+                              <div className="bg-emerald-950/40 border border-emerald-500/30 p-2 rounded-lg text-emerald-300 text-[11px] font-semibold flex items-center space-x-1.5">
+                                <Zap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                <span>⚡ Predicts <strong>+{percentChange}% higher CTR</strong> (+{delta}% absolute) than Variant A!</span>
+                              </div>
+                            );
+                          } else if (delta < 0) {
+                            return (
+                              <div className="bg-amber-950/40 border border-amber-500/30 p-2 rounded-lg text-amber-300 text-[11px] font-semibold flex items-center space-x-1.5">
+                                <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                <span>Variant A holds a {Math.abs(delta)}% predicted CTR advantage over Variant B.</span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+
+                        <p className="text-[11px] text-slate-400 italic pt-1 border-t border-slate-800/60 leading-tight">
+                          💡 {metricsB.boostReason}
+                        </p>
+                      </div>
                     )}
                   </div>
 
@@ -525,9 +901,33 @@ export const SplitTestComparator: React.FC<SplitTestComparatorProps> = ({
                     <td className="p-2.5">{variantB.headline}</td>
                   </tr>
                   <tr>
-                    <td className="p-2.5 font-medium text-slate-400">Primary CTA</td>
-                    <td className="p-2.5 font-bold">{campaign.primaryCTA.text}</td>
-                    <td className="p-2.5 font-bold">{variantB.primaryCTA.text}</td>
+                    <td className="p-2.5 font-medium text-slate-400">Primary CTA Label</td>
+                    <td className="p-2.5 font-bold text-white">{campaign.primaryCTA.text}</td>
+                    <td className="p-2.5 font-bold text-white">{variantB.primaryCTA.text}</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-medium text-slate-400">CTA Button Color</td>
+                    <td className="p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="w-3.5 h-3.5 rounded-full border border-white/40 shadow-sm" style={{ backgroundColor: ctaColorA }} />
+                        <span className="font-mono text-[11px] text-slate-200">{ctaColorA}</span>
+                      </div>
+                    </td>
+                    <td className="p-2.5">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="w-3.5 h-3.5 rounded-full border border-white/40 shadow-sm" style={{ backgroundColor: ctaColorB }} />
+                        <span className="font-mono text-[11px] text-slate-200">{ctaColorB}</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-medium text-slate-400">Simulated CTR (Click-Through)</td>
+                    <td className="p-2.5 font-mono font-bold text-blue-400">
+                      {metricsA.predictedCTR}% <span className="text-[10px] font-normal text-slate-400">({metricsA.scoreRating})</span>
+                    </td>
+                    <td className="p-2.5 font-mono font-bold text-indigo-400">
+                      {metricsB?.predictedCTR}% <span className="text-[10px] font-normal text-slate-400">({metricsB?.scoreRating})</span>
+                    </td>
                   </tr>
                 </tbody>
               </table>

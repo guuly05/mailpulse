@@ -15,6 +15,7 @@ export interface PrimaryCTA {
   text: string;
   url: string;
   secondaryNote?: string;
+  buttonColor?: string;
 }
 
 export interface PromoOffer {

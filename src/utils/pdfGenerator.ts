@@ -10,6 +10,7 @@ export function generatePrintablePDFHTML(campaign: EmailCampaign): string {
     campaign.subjectLines[campaign.selectedSubjectIndex]?.openRateScore || 85;
 
   const primaryColor = campaign.primaryColor || "#3b82f6";
+  const ctaButtonColor = campaign.primaryCTA.buttonColor || primaryColor;
 
   const paragraphsHTML = campaign.bodyParagraphs
     .map(
@@ -151,7 +152,7 @@ export function generatePrintablePDFHTML(campaign: EmailCampaign): string {
     }
     .btn-cta {
       display: inline-block;
-      background-color: ${primaryColor};
+      background-color: ${ctaButtonColor};
       color: #ffffff !important;
       font-size: 15px;
       font-weight: bold;

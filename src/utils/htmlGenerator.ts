@@ -150,7 +150,7 @@ export function generateEmailHTML(campaign: EmailCampaign): string {
               <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 32px 0 16px 0;">
                 <tr>
                   <td align="center">
-                    <a href="${escapeHtml(campaign.primaryCTA.url || '#')}" target="_blank" style="display: inline-block; background-color: ${campaign.primaryColor}; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-family: sans-serif;">
+                    <a href="${escapeHtml(campaign.primaryCTA.url || '#')}" target="_blank" style="display: inline-block; background-color: ${campaign.primaryCTA.buttonColor || campaign.primaryColor}; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 32px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-family: sans-serif;">
                       ${escapeHtml(campaign.primaryCTA.text)}
                     </a>
                   </td>
