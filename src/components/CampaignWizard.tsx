@@ -1,16 +1,18 @@
 import React, { useState } from "react";
-import { Sparkles, Wand2, Target, Users, MessageSquare, Palette, Tag, Building2, Flame, Rocket, Award, ShoppingCart, ArrowRight } from "lucide-react";
+import { Sparkles, Wand2, Target, Users, MessageSquare, Palette, Tag, Building2, Flame, Rocket, Award, ShoppingCart, ArrowRight, Bookmark } from "lucide-react";
 import { CampaignGenerationOptions } from "../types";
 import { CAMPAIGN_PRESETS } from "../data/presets";
 
 interface CampaignWizardProps {
   onGenerate: (options: CampaignGenerationOptions) => void;
   isGenerating: boolean;
+  onOpenBrandLibrary?: () => void;
 }
 
 export const CampaignWizard: React.FC<CampaignWizardProps> = ({
   onGenerate,
   isGenerating,
+  onOpenBrandLibrary,
 }) => {
   const [prompt, setPrompt] = useState("");
   const [brandName, setBrandName] = useState("Aura Apparel");
@@ -127,9 +129,21 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
       {/* Main Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="prompt-input" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-            Campaign Brief / Concept Prompt
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="prompt-input" className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              Campaign Brief / Concept Prompt
+            </label>
+            {onOpenBrandLibrary && (
+              <button
+                type="button"
+                onClick={onOpenBrandLibrary}
+                className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center space-x-1 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 rounded-lg border border-indigo-500/30 transition"
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>Brand Asset Library</span>
+              </button>
+            )}
+          </div>
           <div className="relative">
             <textarea
               id="prompt-input"

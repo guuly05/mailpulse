@@ -1,9 +1,10 @@
 import React from "react";
-import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split, CloudCheck, CloudUpload, CheckCircle2, Save } from "lucide-react";
+import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split, CloudCheck, CloudUpload, CheckCircle2, Save, Bookmark } from "lucide-react";
 
 interface HeaderProps {
   campaignCount: number;
   onOpenHistory: () => void;
+  onOpenBrandLibrary?: () => void;
   onOpenExport: () => void;
   onOpenSpamModal: () => void;
   onOpenSplitTest?: () => void;
@@ -19,6 +20,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   campaignCount,
   onOpenHistory,
+  onOpenBrandLibrary,
   onOpenExport,
   onOpenSpamModal,
   onOpenSplitTest,
@@ -131,6 +133,19 @@ export const Header: React.FC<HeaderProps> = ({
             <PlusCircle className="w-4 h-4 text-blue-400" />
             <span className="hidden md:inline">New Campaign</span>
           </button>
+
+          {/* Brand Asset Library Drawer Toggle */}
+          {onOpenBrandLibrary && (
+            <button
+              id="header-brand-library-btn"
+              onClick={onOpenBrandLibrary}
+              className="flex items-center space-x-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+              title="Brand Asset Library (Colors, Voice & Signatures)"
+            >
+              <Bookmark className="w-4 h-4 text-indigo-400" />
+              <span className="hidden sm:inline">Brand Library</span>
+            </button>
+          )}
 
           {/* History Drawer Toggle */}
           <button

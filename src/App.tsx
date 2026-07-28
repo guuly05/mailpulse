@@ -8,6 +8,7 @@ import { RefinementAssistant } from "./components/RefinementAssistant";
 import { SpamCheckModal } from "./components/SpamCheckModal";
 import { ExportModal } from "./components/ExportModal";
 import { SavedCampaignsDrawer } from "./components/SavedCampaignsDrawer";
+import { BrandAssetLibraryDrawer } from "./components/BrandAssetLibraryDrawer";
 import { SplitTestComparator } from "./components/SplitTestComparator";
 import { CampaignPerformance } from "./components/CampaignPerformance";
 import { InboxSimulation } from "./components/InboxSimulation";
@@ -27,6 +28,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [showBrandLibraryDrawer, setShowBrandLibraryDrawer] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showSpamModal, setShowSpamModal] = useState(false);
 
@@ -402,6 +404,7 @@ export default function App() {
       <Header
         campaignCount={savedCampaigns.length}
         onOpenHistory={() => setShowHistoryDrawer(true)}
+        onOpenBrandLibrary={() => setShowBrandLibraryDrawer(true)}
         onOpenExport={() => setShowExportModal(true)}
         onOpenSpamModal={() => setShowSpamModal(true)}
         onOpenSplitTest={scrollToSplitTest}
@@ -440,6 +443,7 @@ export default function App() {
         <CampaignWizard
           onGenerate={handleGenerateCampaign}
           isGenerating={isGenerating}
+          onOpenBrandLibrary={() => setShowBrandLibraryDrawer(true)}
         />
 
         {/* Generated Active Campaign Display */}
@@ -549,6 +553,14 @@ export default function App() {
           onDeleteCampaign={handleDeleteCampaign}
           onClose={() => setShowHistoryDrawer(false)}
           activeCampaignId={activeCampaign?.id}
+        />
+      )}
+
+      {showBrandLibraryDrawer && (
+        <BrandAssetLibraryDrawer
+          onClose={() => setShowBrandLibraryDrawer(false)}
+          activeCampaign={activeCampaign}
+          onUpdateCampaign={(updated) => saveOrUpdateActiveCampaign(updated)}
         />
       )}
 

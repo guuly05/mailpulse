@@ -145,3 +145,36 @@ export interface PresetTemplate {
   icon: string;
   options: CampaignGenerationOptions;
 }
+
+// Brand Asset Library Types
+export interface BrandColorAsset {
+  id: string;
+  label: string;
+  hex: string;
+}
+
+export interface BrandVoiceGuideline {
+  id: string;
+  title: string;
+  tone: string;
+  targetAudience?: string;
+  keyPhrases?: string[];
+  bannedWords?: string[];
+  notes?: string;
+}
+
+export interface BrandBoilerplateSignature {
+  id: string;
+  title: string;
+  senderName: string;
+  companyName: string;
+  address: string;
+  unsubscribeText: string;
+  legalDisclaimer?: string;
+}
+
+export interface BrandAssetLibraryData {
+  colors: BrandColorAsset[];
+  voiceGuidelines: BrandVoiceGuideline[];
+  signatures: BrandBoilerplateSignature[];
+}
