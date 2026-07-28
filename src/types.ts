@@ -114,6 +114,7 @@ export interface EmailCampaign {
   backgroundColor: string;
   textColor: string;
   visualStyle: string;
+  brandTone?: string;
   
   // A/B Split Testing Support
   variantAName?: string;

@@ -26,6 +26,12 @@ import {
   MousePointerClick,
   FileText,
   Sliders,
+  Briefcase,
+  Smile,
+  Crown,
+  Volume2,
+  Wand2,
+  Flame,
 } from "lucide-react";
 
 interface RefinementAssistantProps {
@@ -52,6 +58,106 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
   const [customAltText, setCustomAltText] = useState("");
   const [copiedAltText, setCopiedAltText] = useState(false);
   const [savedAltTextNotice, setSavedAltTextNotice] = useState(false);
+
+  // Brand Voice Tone Control States
+  const [activeToneIndex, setActiveToneIndex] = useState<number>(1);
+  const [lastSelectedTone, setLastSelectedTone] = useState<string>("");
+
+  const BRAND_TONE_OPTIONS = [
+    {
+      id: "professional",
+      name: "Professional, Clean & Direct",
+      shortLabel: "Professional",
+      icon: Briefcase,
+      color: "border-blue-500/30 text-blue-400 bg-blue-500/10",
+      activeBg: "bg-blue-600 text-white border-blue-500 shadow-blue-500/30",
+      description: "Authoritative, clear, corporate, and trustworthy copy focused on facts and value.",
+      prompt: "Rewrite all body copy, headlines, subheadlines, and preview text using a Professional, Clean & Direct brand voice tone. Keep language authoritative, clear, and trustworthy while preserving all key offer details."
+    },
+    {
+      id: "friendly",
+      name: "Warm, Friendly & Conversational",
+      shortLabel: "Friendly",
+      icon: Smile,
+      color: "border-emerald-500/30 text-emerald-400 bg-emerald-500/10",
+      activeBg: "bg-emerald-600 text-white border-emerald-500 shadow-emerald-500/30",
+      description: "Welcoming, approachable, warm, and conversational tone as if writing to a good friend.",
+      prompt: "Rewrite all body copy, headlines, and preview text in a Warm, Friendly & Conversational brand voice tone. Use an approachable, helpful style as if talking directly to a friend."
+    },
+    {
+      id: "playful",
+      name: "Playful, Witty & Casual",
+      shortLabel: "Playful",
+      icon: Sparkles,
+      color: "border-pink-500/30 text-pink-400 bg-pink-500/10",
+      activeBg: "bg-pink-600 text-white border-pink-500 shadow-pink-500/30",
+      description: "Fun, humorous, lighthearted, energetic, and witty phrasing with clever wordplay.",
+      prompt: "Rewrite all body copy, headlines, subheadlines, and preview text using a Playful, Witty & Casual brand voice tone. Use clever puns, enthusiastic rhythm, and fun lighthearted phrasing."
+    },
+    {
+      id: "urgent",
+      name: "Urgent & High-Converting",
+      shortLabel: "Urgent",
+      icon: Flame,
+      color: "border-amber-500/30 text-amber-400 bg-amber-500/10",
+      activeBg: "bg-amber-600 text-white border-amber-500 shadow-amber-500/30",
+      description: "High-energy, FOMO-driven, action-oriented, and punchy to maximize immediate clicks.",
+      prompt: "Rewrite all body copy, headlines, and call-to-actions in an Urgent & High-Converting brand voice tone. Inject strong call to action, time-sensitivity, and FOMO while keeping paragraphs punchy."
+    },
+    {
+      id: "luxury",
+      name: "Exclusive & Luxury",
+      shortLabel: "Luxury",
+      icon: Crown,
+      color: "border-purple-500/30 text-purple-400 bg-purple-500/10",
+      activeBg: "bg-purple-600 text-white border-purple-500 shadow-purple-500/30",
+      description: "Sophisticated, elegant, prestigious, and refined copy tailored for high-end audiences.",
+      prompt: "Rewrite all body copy, headlines, subheadlines, and preview text using an Exclusive, Elegant & Luxury brand voice tone. Use refined, sophisticated prose and premium positioning."
+    },
+    {
+      id: "bold",
+      name: "Bold & Punchy",
+      shortLabel: "Bold",
+      icon: Zap,
+      color: "border-cyan-500/30 text-cyan-400 bg-cyan-500/10",
+      activeBg: "bg-cyan-600 text-white border-cyan-500 shadow-cyan-500/30",
+      description: "Short sentences, striking hooks, direct messaging, and high-impact phrasing.",
+      prompt: "Rewrite all body copy, headlines, and CTAs in a Bold & Punchy brand voice tone. Use ultra-short sentences, striking hooks, and confident impact."
+    }
+  ];
+
+  // Sync active tone index when campaign changes or has brandTone
+  useEffect(() => {
+    if (campaign?.brandTone) {
+      const lower = campaign.brandTone.toLowerCase();
+      const idx = BRAND_TONE_OPTIONS.findIndex(
+        (t) => lower.includes(t.id) || lower.includes(t.shortLabel.toLowerCase()) || t.name.toLowerCase().includes(lower)
+      );
+      if (idx !== -1) {
+        setActiveToneIndex(idx);
+      }
+    }
+  }, [campaign?.id, campaign?.brandTone]);
+
+  const handleSelectTone = (index: number) => {
+    if (isRefining) return;
+    const targetTone = BRAND_TONE_OPTIONS[index];
+    if (!targetTone) return;
+
+    setActiveToneIndex(index);
+    setLastSelectedTone(targetTone.name);
+
+    // Update campaign local brandTone
+    if (campaign && onUpdateCampaign) {
+      onUpdateCampaign({
+        ...campaign,
+        brandTone: targetTone.name,
+      });
+    }
+
+    // Automatically re-prompt the refinement service
+    onRefine(targetTone.prompt);
+  };
 
   // Sync customAltText whenever campaign changes
   useEffect(() => {
@@ -231,6 +337,128 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
           >
             Adjust Schedule
           </button>
+        </div>
+      )}
+
+      {/* BRAND VOICE TONE ADJUSTER SUB-SECTION */}
+      {campaign && (
+        <div id="brand-voice-tone-control" className="mb-5 bg-slate-950 border border-slate-800 rounded-xl p-4 transition shadow-inner">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                <Volume2 className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Brand Voice & Tone Adjuster
+                  </h4>
+                  <span className="text-[10px] font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-full">
+                    Auto-Refine Copy
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Slide or select a brand personality to automatically re-prompt AI and adjust body copy
+                </p>
+              </div>
+            </div>
+
+            {/* Current Active Tone Badge */}
+            <div className="flex items-center space-x-2 self-start sm:self-auto">
+              {isRefining && lastSelectedTone ? (
+                <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg flex items-center space-x-1.5 animate-pulse">
+                  <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
+                  <span>Rewriting for {BRAND_TONE_OPTIONS[activeToneIndex]?.shortLabel}...</span>
+                </span>
+              ) : (
+                <span className="text-[11px] font-bold text-slate-300 bg-slate-900 border border-slate-700 px-2.5 py-1 rounded-lg flex items-center space-x-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span>Active Tone: <strong className="text-white">{BRAND_TONE_OPTIONS[activeToneIndex]?.shortLabel || campaign.brandTone || "Friendly"}</strong></span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Interactive Tone Spectrum Slider */}
+          <div className="mb-3.5 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800">
+            <div className="flex justify-between items-center text-[10px] uppercase font-mono font-bold text-slate-400 mb-1.5 px-0.5">
+              <span>💼 Professional</span>
+              <span className="hidden sm:inline">🤝 Friendly</span>
+              <span>🎨 Playful</span>
+              <span className="hidden sm:inline">🔥 Urgent</span>
+              <span>👑 Luxury</span>
+              <span>⚡ Bold</span>
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max="5"
+              step="1"
+              value={activeToneIndex}
+              disabled={isRefining}
+              onChange={(e) => handleSelectTone(parseInt(e.target.value, 10))}
+              className="w-full accent-indigo-500 cursor-pointer h-2 bg-slate-800 rounded-lg appearance-none transition disabled:opacity-50"
+            />
+          </div>
+
+          {/* Tone Quick Selector Pill Buttons */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-3">
+            {BRAND_TONE_OPTIONS.map((tOption, idx) => {
+              const IconComp = tOption.icon;
+              const isActive = activeToneIndex === idx;
+
+              return (
+                <button
+                  key={tOption.id}
+                  type="button"
+                  disabled={isRefining}
+                  onClick={() => handleSelectTone(idx)}
+                  className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between select-none ${
+                    isActive
+                      ? tOption.activeBg + " shadow-md"
+                      : "bg-slate-900 border-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white"
+                  } disabled:opacity-50`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className={`p-1 rounded-md ${isActive ? "bg-white/20 text-white" : tOption.color}`}>
+                      <IconComp className="w-3.5 h-3.5" />
+                    </div>
+                    {isActive && <Check className="w-3.5 h-3.5 text-white" />}
+                  </div>
+                  <span className="text-[11px] font-bold block leading-tight">{tOption.shortLabel}</span>
+                  <span className={`text-[9px] mt-0.5 line-clamp-1 ${isActive ? "text-white/80" : "text-slate-500"}`}>
+                    {tOption.name.split(',')[0]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Active Tone Strategy Description & Manual Trigger Button */}
+          <div className="bg-slate-900 p-3 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-start space-x-2">
+              <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-slate-200">
+                  {BRAND_TONE_OPTIONS[activeToneIndex]?.name}:
+                </span>{" "}
+                <span className="text-slate-400">
+                  {BRAND_TONE_OPTIONS[activeToneIndex]?.description}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              disabled={isRefining}
+              onClick={() => handleSelectTone(activeToneIndex)}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition flex items-center space-x-1.5 shrink-0 self-start sm:self-auto disabled:opacity-50"
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Re-Prompt Tone</span>
+            </button>
+          </div>
         </div>
       )}
 

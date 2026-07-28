@@ -211,6 +211,7 @@ export default function App() {
         backgroundColor: "#ffffff",
         textColor: "#334155",
         visualStyle: options.visualStyle,
+        brandTone: options.tone,
       };
 
       saveOrUpdateActiveCampaign(newCampaign);
