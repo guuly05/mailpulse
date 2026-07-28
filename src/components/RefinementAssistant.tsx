@@ -32,6 +32,8 @@ import {
   Volume2,
   Wand2,
   Flame,
+  Languages,
+  Globe,
 } from "lucide-react";
 
 interface RefinementAssistantProps {
@@ -39,6 +41,7 @@ interface RefinementAssistantProps {
   isRefining: boolean;
   campaign?: EmailCampaign;
   onUpdateCampaign?: (updated: EmailCampaign) => void;
+  onOpenTranslator?: () => void;
 }
 
 export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
@@ -46,6 +49,7 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
   isRefining,
   campaign,
   onUpdateCampaign,
+  onOpenTranslator,
 }) => {
   const [instruction, setInstruction] = useState("");
   const [showSendTimeModal, setShowSendTimeModal] = useState(false);
@@ -304,21 +308,35 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
           </div>
         </div>
 
-        {/* Send-Time Optimizer Trigger Button */}
-        <button
-          onClick={() => {
-            setShowSendTimeModal(true);
-            if (!currentRec && campaign) {
-              handleOptimizeSendTime();
-            }
-          }}
-          className="text-xs font-bold px-3 py-1.5 rounded-xl border transition flex items-center space-x-2 shrink-0 bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30 text-purple-300"
-        >
-          <Clock className="w-3.5 h-3.5 text-purple-400" />
-          <span>
-            {currentRec ? `Send Window: ${currentRec.recommendedDateTime}` : "📅 Send-Time Optimizer"}
-          </span>
-        </button>
+        <div className="flex items-center space-x-2 shrink-0">
+          {/* Translate Copy Trigger Button */}
+          {onOpenTranslator && (
+            <button
+              onClick={onOpenTranslator}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl border transition flex items-center space-x-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/30 text-indigo-300"
+              title="Translate email copy into a secondary language using Gemini AI"
+            >
+              <Languages className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Translate Copy</span>
+            </button>
+          )}
+
+          {/* Send-Time Optimizer Trigger Button */}
+          <button
+            onClick={() => {
+              setShowSendTimeModal(true);
+              if (!currentRec && campaign) {
+                handleOptimizeSendTime();
+              }
+            }}
+            className="text-xs font-bold px-3 py-1.5 rounded-xl border transition flex items-center space-x-2 bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30 text-purple-300"
+          >
+            <Clock className="w-3.5 h-3.5 text-purple-400" />
+            <span>
+              {currentRec ? `Send Window: ${currentRec.recommendedDateTime}` : "📅 Send-Time Optimizer"}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Active Send Time Metadata Badge if attached */}

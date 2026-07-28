@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split, CloudCheck, CloudUpload, CheckCircle2, Save, Bookmark } from "lucide-react";
+import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split, CloudCheck, CloudUpload, CheckCircle2, Save, Bookmark, Languages } from "lucide-react";
 
 interface HeaderProps {
   campaignCount: number;
@@ -8,6 +8,7 @@ interface HeaderProps {
   onOpenExport: () => void;
   onOpenSpamModal: () => void;
   onOpenSplitTest?: () => void;
+  onOpenTranslator?: () => void;
   onNewCampaign: () => void;
   onForceAutoSave?: () => void;
   hasCampaign: boolean;
@@ -24,6 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExport,
   onOpenSpamModal,
   onOpenSplitTest,
+  onOpenTranslator,
   onNewCampaign,
   onForceAutoSave,
   hasCampaign,
@@ -108,6 +110,19 @@ export const Header: React.FC<HeaderProps> = ({
                   {hasSplitTest && (
                     <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
                   )}
+                </button>
+              )}
+
+              {/* Translate Copy Button */}
+              {onOpenTranslator && (
+                <button
+                  id="header-translate-btn"
+                  onClick={onOpenTranslator}
+                  className="flex items-center space-x-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                  title="Translate email copy with Gemini AI while preserving brand tone"
+                >
+                  <Languages className="w-4 h-4 text-indigo-400" />
+                  <span className="hidden sm:inline">Translate</span>
                 </button>
               )}
 

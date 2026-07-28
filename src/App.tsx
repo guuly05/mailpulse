@@ -12,6 +12,7 @@ import { BrandAssetLibraryDrawer } from "./components/BrandAssetLibraryDrawer";
 import { SplitTestComparator } from "./components/SplitTestComparator";
 import { CampaignPerformance } from "./components/CampaignPerformance";
 import { InboxSimulation } from "./components/InboxSimulation";
+import { CampaignTranslator } from "./components/CampaignTranslator";
 import { Sparkles, AlertCircle, RefreshCw, Wand2 } from "lucide-react";
 
 const LOCAL_STORAGE_KEY = "mailpulse_saved_campaigns_v1";
@@ -31,6 +32,7 @@ export default function App() {
   const [showBrandLibraryDrawer, setShowBrandLibraryDrawer] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showSpamModal, setShowSpamModal] = useState(false);
+  const [showTranslatorModal, setShowTranslatorModal] = useState(false);
 
   // Auto-Save draft state
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
@@ -408,6 +410,7 @@ export default function App() {
         onOpenExport={() => setShowExportModal(true)}
         onOpenSpamModal={() => setShowSpamModal(true)}
         onOpenSplitTest={scrollToSplitTest}
+        onOpenTranslator={() => setShowTranslatorModal(true)}
         onNewCampaign={() => {
           setActiveCampaign(null);
           window.scrollTo({ top: 0, behavior: "smooth" });
@@ -492,6 +495,7 @@ export default function App() {
               isRefining={isRefining}
               campaign={activeCampaign}
               onUpdateCampaign={(updated) => saveOrUpdateActiveCampaign(updated)}
+              onOpenTranslator={() => setShowTranslatorModal(true)}
             />
 
             {/* A/B Split Testing Comparator */}
@@ -561,6 +565,15 @@ export default function App() {
           onClose={() => setShowBrandLibraryDrawer(false)}
           activeCampaign={activeCampaign}
           onUpdateCampaign={(updated) => saveOrUpdateActiveCampaign(updated)}
+        />
+      )}
+
+      {activeCampaign && (
+        <CampaignTranslator
+          campaign={activeCampaign}
+          onUpdateCampaign={(updated) => saveOrUpdateActiveCampaign(updated)}
+          isOpen={showTranslatorModal}
+          onClose={() => setShowTranslatorModal(false)}
         />
       )}
 

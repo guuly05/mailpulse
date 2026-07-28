@@ -598,6 +598,154 @@ Return a valid JSON object matching this schema:
   }
 });
 
+// API Route: Translate Email Campaign while preserving brand tone
+app.post("/api/campaign/translate", async (req, res) => {
+  try {
+    const { campaign, targetLanguage = "Spanish", customBrandTone } = req.body;
+
+    if (!campaign) {
+      return res.status(400).json({ error: "Campaign data is required for translation." });
+    }
+
+    const ai = getGeminiClient();
+    const toneToPreserve = customBrandTone || campaign.brandTone || "Engaging, authoritative, and persuasive";
+
+    const systemInstruction = `You are a world-class multilingual Email Copywriter and Localization Specialist.
+Translate the provided email marketing campaign into ${targetLanguage}.
+CRITICAL REQUIREMENT: You MUST preserve the established brand tone ("${toneToPreserve}"), marketing nuance, emotional hooks, call-to-actions, and structural formatting.
+Adapt idioms or cultural references appropriately for ${targetLanguage} native speakers while keeping brand identity completely consistent.
+Return ONLY valid JSON matching the requested schema.`;
+
+    const userPrompt = `
+Source Email Campaign to Translate into ${targetLanguage}:
+- Brand Name: ${campaign.brandName}
+- Target Language: ${targetLanguage}
+- Preserved Brand Tone: "${toneToPreserve}"
+- Campaign Title: ${campaign.campaignTitle}
+- Subject Lines:
+${campaign.subjectLines?.map((s: any, i: number) => `  ${i + 1}. [${s.type}] ${s.text}`).join("\n") || "N/A"}
+- Preview Text: ${campaign.previewText || ""}
+- Headline: ${campaign.headline || ""}
+- Subheadline: ${campaign.subheadline || ""}
+- Body Paragraphs:
+${campaign.bodyParagraphs?.map((p: string, i: number) => `  Paragraph ${i + 1}: ${p}`).join("\n\n") || ""}
+- Key Highlights:
+${campaign.keyHighlights?.map((h: any, i: number) => `  ${i + 1}. ${h.title}: ${h.description} (Icon: ${h.iconName})`).join("\n") || ""}
+- Primary Call to Action: Button Text: "${campaign.primaryCTA?.text || ""}", Secondary Note: "${campaign.primaryCTA?.secondaryNote || ""}"
+${campaign.promoOffer ? `- Promo Offer: Badge: "${campaign.promoOffer.badgeText || ""}", Title: "${campaign.promoOffer.offerTitle || ""}", Code: "${campaign.promoOffer.offerCode || ""}", Expiration: "${campaign.promoOffer.expirationNotice || ""}"` : ""}
+${campaign.secondarySection ? `- Secondary Section: Title: "${campaign.secondarySection.title || ""}", Description: "${campaign.secondarySection.description || ""}", CTA: "${campaign.secondarySection.ctaText || ""}"` : ""}
+${campaign.footer ? `- Footer Unsubscribe Text: "${campaign.footer.unsubscribeText || ""}"` : ""}
+
+Generate the complete translated campaign object into ${targetLanguage}, preserving subject line scores and types, translating all copy seamlessly, and providing translator notes explaining how the brand tone was preserved.
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: userPrompt,
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            translatedLanguage: { type: Type.STRING },
+            translatorNotes: { type: Type.STRING },
+            campaignTitle: { type: Type.STRING },
+            subjectLines: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  text: { type: Type.STRING },
+                  type: { type: Type.STRING },
+                  openRateScore: { type: Type.NUMBER },
+                  reasoning: { type: Type.STRING },
+                },
+                required: ["text", "type", "openRateScore", "reasoning"],
+              },
+            },
+            previewText: { type: Type.STRING },
+            headline: { type: Type.STRING },
+            subheadline: { type: Type.STRING },
+            bodyParagraphs: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+            },
+            keyHighlights: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  iconName: { type: Type.STRING },
+                },
+                required: ["title", "description", "iconName"],
+              },
+            },
+            primaryCTA: {
+              type: Type.OBJECT,
+              properties: {
+                text: { type: Type.STRING },
+                url: { type: Type.STRING },
+                secondaryNote: { type: Type.STRING },
+              },
+              required: ["text", "url"],
+            },
+            promoOffer: {
+              type: Type.OBJECT,
+              properties: {
+                badgeText: { type: Type.STRING },
+                offerTitle: { type: Type.STRING },
+                offerCode: { type: Type.STRING },
+                expirationNotice: { type: Type.STRING },
+              },
+            },
+            secondarySection: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                description: { type: Type.STRING },
+                ctaText: { type: Type.STRING },
+                ctaUrl: { type: Type.STRING },
+              },
+            },
+            footer: {
+              type: Type.OBJECT,
+              properties: {
+                companyName: { type: Type.STRING },
+                address: { type: Type.STRING },
+                unsubscribeText: { type: Type.STRING },
+              },
+              required: ["companyName", "address"],
+            },
+          },
+          required: [
+            "translatedLanguage",
+            "translatorNotes",
+            "campaignTitle",
+            "subjectLines",
+            "previewText",
+            "headline",
+            "subheadline",
+            "bodyParagraphs",
+            "keyHighlights",
+            "primaryCTA",
+          ],
+        },
+      },
+    });
+
+    const jsonText = response.text || "{}";
+    const translatedData = JSON.parse(jsonText);
+
+    res.json({ success: true, translatedData });
+  } catch (error: any) {
+    console.error("Error translating campaign:", error);
+    res.status(500).json({ error: error.message || "Failed to translate email campaign." });
+  }
+});
+
 // Start Express and Vite middleware
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
