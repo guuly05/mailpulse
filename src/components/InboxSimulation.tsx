@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { EmailCampaign } from "../types";
 import {
   Smartphone,
@@ -22,7 +22,17 @@ import {
   ChevronRight,
   ShieldCheck,
   Copy,
-  Edit3
+  Edit3,
+  Share2,
+  Heart,
+  MessageCircle,
+  Repeat2,
+  ThumbsUp,
+  Hash,
+  Globe,
+  RotateCcw,
+  Bookmark,
+  Send
 } from "lucide-react";
 
 interface InboxSimulationProps {
@@ -31,7 +41,7 @@ interface InboxSimulationProps {
   onUpdatePreviewText?: (newText: string) => void;
 }
 
-type ClientType = "gmail" | "apple" | "outlook" | "all";
+type ClientType = "gmail" | "apple" | "outlook" | "social" | "all";
 type DeviceType = "mobile" | "desktop";
 type ThemeType = "light" | "dark";
 
@@ -49,6 +59,50 @@ export const InboxSimulation: React.FC<InboxSimulationProps> = ({
   const [isStarred, setIsStarred] = useState(false);
   const [isUnread, setIsUnread] = useState(true);
   const [copiedSubject, setCopiedSubject] = useState(false);
+
+  // Social Media Post Generator State
+  const [socialPlatform, setSocialPlatform] = useState<"linkedin" | "twitter" | "instagram">("linkedin");
+  const [customSocialCaption, setCustomSocialCaption] = useState<string>("");
+  const [copiedSocialNotice, setCopiedSocialNotice] = useState<string | null>(null);
+
+  const defaultHashtags = useMemo(() => {
+    const brandTag = `#${campaign.brandName.replace(/[^a-zA-Z0-9]/g, "") || "Brand"}`;
+    const tags = [brandTag, "#SpecialOffer", "#ExclusiveDeal", "#EmailMarketing", "#LimitedTime"];
+    if (campaign.couponCode) tags.push("#DiscountCode");
+    return tags;
+  }, [campaign.brandName, campaign.couponCode]);
+
+  const [activeHashtags, setActiveHashtags] = useState<string[]>(defaultHashtags);
+
+  const generatedCaption = useMemo(() => {
+    const headline = campaign.headline || "Special Announcement";
+    const bodyFirst = campaign.bodyParagraphs[0] || "";
+    const promo = campaign.couponCode ? `\n\n🎟️ Use promo code ${campaign.couponCode} for an exclusive discount!` : "";
+    const cta = campaign.callToActionText ? `\n\n👉 ${campaign.callToActionText}: ${campaign.callToActionUrl || "https://brand.com/offer"}` : "";
+    const tagsStr = activeHashtags.length > 0 ? `\n\n${activeHashtags.join(" ")}` : "";
+
+    return `${headline}\n\n${bodyFirst}${promo}${cta}${tagsStr}`;
+  }, [campaign, activeHashtags]);
+
+  const currentCaption = customSocialCaption || generatedCaption;
+
+  const handleResetCaption = () => {
+    setCustomSocialCaption("");
+  };
+
+  const handleToggleHashtag = (tag: string) => {
+    if (activeHashtags.includes(tag)) {
+      setActiveHashtags(activeHashtags.filter((t) => t !== tag));
+    } else {
+      setActiveHashtags([...activeHashtags, tag]);
+    }
+  };
+
+  const handleCopySocialCaption = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedSocialNotice(label);
+    setTimeout(() => setCopiedSocialNotice(null), 2000);
+  };
 
   const activeSubject =
     campaign.subjectLines[campaign.selectedSubjectIndex]?.text ||
@@ -253,6 +307,451 @@ export const InboxSimulation: React.FC<InboxSimulationProps> = ({
         <div className="text-[10px] text-slate-400 shrink-0 text-right">
           <div>Wed 10:14</div>
           <div className="text-blue-500 font-semibold mt-0.5">Focused</div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSocialMediaView = () => {
+    const isDark = inboxTheme === "dark";
+    const bgCard = isDark ? "bg-slate-950 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900 shadow-lg";
+    const handleName = `@${campaign.brandName.toLowerCase().replace(/[^a-z0-9]/g, "") || "brand"}`;
+
+    const platformLimits = {
+      linkedin: 3000,
+      twitter: 280,
+      instagram: 2200,
+    };
+    const currentLimit = platformLimits[socialPlatform];
+    const captionLength = currentCaption.length;
+    const isOverLimit = captionLength > currentLimit;
+
+    return (
+      <div className="space-y-6">
+        {/* Social View Sub-Header */}
+        <div className="bg-slate-950 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold shrink-0">
+              <Share2 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h4 className="text-base font-bold text-white">Cross-Channel Social Media Post Generator</h4>
+                <span className="bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[10px] font-mono px-2 py-0.5 rounded-full">
+                  Auto-Formatted
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Preview and adapt your email content into engaging posts for LinkedIn, X (Twitter), and Instagram
+              </p>
+            </div>
+          </div>
+
+          {/* Platform Selector Tabs */}
+          <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 self-start md:self-auto text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setSocialPlatform("linkedin")}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 ${
+                socialPlatform === "linkedin"
+                  ? "bg-blue-600 text-white shadow"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <span>💼 LinkedIn</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSocialPlatform("twitter")}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 ${
+                socialPlatform === "twitter"
+                  ? "bg-sky-500 text-white shadow"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <span>🐦 X / Twitter</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSocialPlatform("instagram")}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 ${
+                socialPlatform === "instagram"
+                  ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <span>📸 Instagram</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 2-Column Layout: Controls & Editor Left / Live Feed Mockup Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Left Column: Post Customizer & Hashtags */}
+          <div className="lg:col-span-5 space-y-4">
+            
+            {/* Post Caption Editor Card */}
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
+                  <Edit3 className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Social Post Caption Draft</span>
+                </label>
+                {customSocialCaption && (
+                  <button
+                    type="button"
+                    onClick={handleResetCaption}
+                    className="text-[11px] text-slate-400 hover:text-indigo-300 flex items-center space-x-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset to Auto</span>
+                  </button>
+                )}
+              </div>
+
+              <textarea
+                rows={7}
+                value={currentCaption}
+                onChange={(e) => setCustomSocialCaption(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 leading-relaxed font-sans"
+                placeholder="Customize your social post caption..."
+              />
+
+              {/* Character Limit Meter */}
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[11px] font-mono">
+                  <span className={isOverLimit ? "text-rose-400 font-bold" : "text-slate-400"}>
+                    {captionLength} / {currentLimit} chars
+                  </span>
+                  {isOverLimit && (
+                    <span className="text-rose-400 text-[10px] font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                      ⚠ Exceeds {socialPlatform === "twitter" ? "X / Twitter 280" : "Platform"} Limit
+                    </span>
+                  )}
+                </div>
+                <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${
+                      isOverLimit ? "bg-rose-500" : captionLength > currentLimit * 0.8 ? "bg-amber-400" : "bg-indigo-500"
+                    }`}
+                    style={{ width: `${Math.min(100, (captionLength / currentLimit) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Hashtag Suggestions Selector */}
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-1.5">
+                  <Hash className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Hashtag Preset Chips</span>
+                </span>
+                <span className="text-[10px] text-slate-500">Toggle to include</span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {defaultHashtags.map((tag) => {
+                  const isActive = activeHashtags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleToggleHashtag(tag)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition flex items-center space-x-1 ${
+                        isActive
+                          ? "bg-indigo-600/30 text-indigo-300 border border-indigo-500/40"
+                          : "bg-slate-900 text-slate-500 border border-slate-800 hover:text-slate-300"
+                      }`}
+                    >
+                      <span>{tag}</span>
+                      {isActive && <Check className="w-3 h-3 text-indigo-400" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => handleCopySocialCaption(currentCaption, "Copied Post Caption!")}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow transition flex items-center justify-center space-x-2"
+              >
+                {copiedSocialNotice ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-300" />
+                    <span>{copiedSocialNotice}</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Copy Social Post Draft</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+          </div>
+
+          {/* Right Column: Live Feed Mockup Display */}
+          <div className="lg:col-span-7 flex flex-col items-center justify-start">
+            
+            <div className="w-full max-w-lg">
+              
+              {/* LINKEDIN MOCKUP CARD */}
+              {socialPlatform === "linkedin" && (
+                <div className={`rounded-2xl border ${bgCard} overflow-hidden shadow-2xl transition`}>
+                  {/* LinkedIn Post Header */}
+                  <div className="p-4 border-b border-slate-200 dark:border-slate-800/80 flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white text-base shadow shrink-0"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        {brandInitial}
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-bold text-sm leading-snug">{campaign.brandName}</span>
+                          <span className="bg-blue-500/20 text-blue-400 text-[10px] px-1.5 py-0.2 rounded font-semibold">1st</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 line-clamp-1">
+                          Official Account • {campaign.subjectLines[0]?.text || "Company News"}
+                        </p>
+                        <p className="text-[10px] text-slate-500 flex items-center space-x-1 mt-0.5">
+                          <span>2h • Promoted •</span>
+                          <Globe className="w-2.5 h-2.5 inline" />
+                        </p>
+                      </div>
+                    </div>
+                    <button className="text-slate-400 hover:text-slate-200 p-1">
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* LinkedIn Caption Text */}
+                  <div className="p-4 text-xs leading-relaxed whitespace-pre-wrap font-sans">
+                    {currentCaption}
+                  </div>
+
+                  {/* LinkedIn Rich Link / Hero Image Card */}
+                  <div className="border-t border-b border-slate-200 dark:border-slate-800/80 bg-slate-900/50">
+                    {campaign.heroImageUrl ? (
+                      <div className="relative aspect-video w-full overflow-hidden bg-slate-950">
+                        <img
+                          src={campaign.heroImageUrl}
+                          alt="Campaign Banner"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="aspect-video w-full flex flex-col items-center justify-center p-6 text-center"
+                        style={{ background: `linear-gradient(135deg, ${primaryColor}22 0%, #0f172a 100%)` }}
+                      >
+                        <Sparkles className="w-8 h-8 text-indigo-400 mb-2" />
+                        <h5 className="font-bold text-white text-sm">{campaign.headline}</h5>
+                        <p className="text-xs text-slate-300 mt-1 line-clamp-2">{campaign.previewText}</p>
+                      </div>
+                    )}
+
+                    <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between">
+                      <div className="min-w-0 pr-2">
+                        <span className="text-[10px] uppercase font-mono font-bold text-indigo-400 block truncate">
+                          {campaign.callToActionUrl || "mailpulse.io/exclusive-deal"}
+                        </span>
+                        <span className="font-bold text-xs text-white block truncate">{campaign.headline}</span>
+                      </div>
+                      <span className="bg-indigo-600 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg shrink-0 shadow">
+                        {campaign.callToActionText || "Learn More"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* LinkedIn Reactions & Metrics */}
+                  <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+                    <div className="flex items-center space-x-1">
+                      <span className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[8px] text-white">👍</span>
+                      <span className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center text-[8px] text-white">👏</span>
+                      <span className="w-4 h-4 rounded-full bg-rose-500 flex items-center justify-center text-[8px] text-white">❤️</span>
+                      <span className="ml-1 font-semibold text-slate-300">184 reactions</span>
+                    </div>
+                    <span>32 comments • 14 reposts</span>
+                  </div>
+
+                  {/* LinkedIn Interactive Buttons */}
+                  <div className="p-2 grid grid-cols-4 gap-1 text-[11px] font-semibold text-slate-400 text-center">
+                    <button className="py-2 hover:bg-slate-800/50 rounded-lg transition flex items-center justify-center space-x-1">
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span>Like</span>
+                    </button>
+                    <button className="py-2 hover:bg-slate-800/50 rounded-lg transition flex items-center justify-center space-x-1">
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>Comment</span>
+                    </button>
+                    <button className="py-2 hover:bg-slate-800/50 rounded-lg transition flex items-center justify-center space-x-1">
+                      <Repeat2 className="w-3.5 h-3.5" />
+                      <span>Repost</span>
+                    </button>
+                    <button className="py-2 hover:bg-slate-800/50 rounded-lg transition flex items-center justify-center space-x-1">
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Send</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TWITTER / X MOCKUP CARD */}
+              {socialPlatform === "twitter" && (
+                <div className={`rounded-2xl border ${bgCard} p-4 shadow-2xl space-y-3 transition`}>
+                  {/* Tweet Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shadow shrink-0"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        {brandInitial}
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-1">
+                          <span className="font-bold text-sm leading-tight text-white">{campaign.brandName}</span>
+                          <span className="text-sky-400 text-xs">✓</span>
+                        </div>
+                        <span className="text-xs text-slate-400 font-mono">{handleName}</span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-slate-500 font-mono">2h</span>
+                  </div>
+
+                  {/* Tweet Text */}
+                  <p className="text-xs leading-relaxed whitespace-pre-wrap font-sans text-slate-100">
+                    {currentCaption}
+                  </p>
+
+                  {/* Tweet Media Banner */}
+                  <div className="rounded-xl border border-slate-800 overflow-hidden bg-slate-900">
+                    {campaign.heroImageUrl ? (
+                      <img
+                        src={campaign.heroImageUrl}
+                        alt="Tweet Media"
+                        className="w-full h-48 object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div
+                        className="h-36 w-full flex flex-col items-center justify-center p-4 text-center"
+                        style={{ background: `linear-gradient(135deg, ${primaryColor}33 0%, #1e293b 100%)` }}
+                      >
+                        <Sparkles className="w-6 h-6 text-sky-400 mb-1" />
+                        <span className="font-bold text-xs text-white">{campaign.headline}</span>
+                      </div>
+                    )}
+                    <div className="p-2.5 bg-slate-950/90 text-[11px]">
+                      <span className="text-slate-400 font-mono text-[10px] block">mailpulse.io</span>
+                      <span className="font-bold text-white block truncate">{campaign.headline}</span>
+                    </div>
+                  </div>
+
+                  {/* Tweet Action Bar */}
+                  <div className="pt-2 border-t border-slate-800 flex justify-between text-xs text-slate-400 px-2">
+                    <span className="flex items-center space-x-1.5 hover:text-sky-400 cursor-pointer">
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span className="text-[11px]">28</span>
+                    </span>
+                    <span className="flex items-center space-x-1.5 hover:text-emerald-400 cursor-pointer">
+                      <Repeat2 className="w-3.5 h-3.5" />
+                      <span className="text-[11px]">94</span>
+                    </span>
+                    <span className="flex items-center space-x-1.5 hover:text-rose-400 cursor-pointer">
+                      <Heart className="w-3.5 h-3.5" />
+                      <span className="text-[11px]">412</span>
+                    </span>
+                    <span className="flex items-center space-x-1.5 hover:text-sky-400 cursor-pointer">
+                      <Bookmark className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* INSTAGRAM MOCKUP CARD */}
+              {socialPlatform === "instagram" && (
+                <div className={`rounded-2xl border ${bgCard} overflow-hidden shadow-2xl transition`}>
+                  {/* Instagram Header */}
+                  <div className="p-3 border-b border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center space-x-2.5">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs ring-2 ring-pink-500/80 p-0.5 shrink-0"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        {brandInitial}
+                      </div>
+                      <span className="font-bold text-xs text-white">{campaign.brandName.toLowerCase().replace(/\s+/g, "")}</span>
+                    </div>
+                    <MoreVertical className="w-4 h-4 text-slate-400" />
+                  </div>
+
+                  {/* Instagram Post Media */}
+                  <div className="relative aspect-square w-full bg-slate-950 flex items-center justify-center overflow-hidden">
+                    {campaign.heroImageUrl ? (
+                      <img
+                        src={campaign.heroImageUrl}
+                        alt="Instagram Post"
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full p-6 flex flex-col items-center justify-center text-center"
+                        style={{ background: `linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #3b82f6 100%)` }}
+                      >
+                        <Sparkles className="w-10 h-10 text-white mb-2" />
+                        <h4 className="font-bold text-white text-lg drop-shadow">{campaign.headline}</h4>
+                        {campaign.couponCode && (
+                          <div className="mt-3 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-white font-mono font-bold text-xs border border-white/30">
+                            CODE: {campaign.couponCode}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {campaign.couponCode && (
+                      <div className="absolute top-3 right-3 bg-slate-950/90 text-amber-300 font-mono text-[10px] font-bold px-2.5 py-1 rounded-full border border-amber-500/30 shadow">
+                        🏷️ {campaign.couponCode}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Instagram Action Icons */}
+                  <div className="p-3 flex items-center justify-between text-white">
+                    <div className="flex items-center space-x-4">
+                      <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+                      <MessageCircle className="w-5 h-5 text-slate-300" />
+                      <Send className="w-5 h-5 text-slate-300" />
+                    </div>
+                    <Bookmark className="w-5 h-5 text-slate-300" />
+                  </div>
+
+                  {/* Likes Count & Caption */}
+                  <div className="px-3 pb-3 space-y-1 text-xs">
+                    <div className="font-bold text-white text-[11px]">Liked by alex_m and 629 others</div>
+                    <div className="text-slate-300 leading-normal text-[11px]">
+                      <strong className="text-white mr-1.5">{campaign.brandName.toLowerCase().replace(/\s+/g, "")}</strong>
+                      {currentCaption}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+          </div>
+
         </div>
       </div>
     );
@@ -470,6 +969,18 @@ export const InboxSimulation: React.FC<InboxSimulationProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveClient("social")}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+            activeClient === "social"
+              ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
+              : "bg-slate-950 text-slate-400 border border-slate-800 hover:text-white"
+          }`}
+        >
+          <Share2 className="w-3.5 h-3.5 text-indigo-400" />
+          <span>Social Media Post Preview</span>
+        </button>
+
+        <button
           onClick={() => setActiveClient("all")}
           className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
             activeClient === "all"
@@ -483,7 +994,9 @@ export const InboxSimulation: React.FC<InboxSimulationProps> = ({
       </div>
 
       {/* Main Simulation View Area */}
-      {activeClient !== "all" ? (
+      {activeClient === "social" ? (
+        renderSocialMediaView()
+      ) : activeClient !== "all" ? (
         <div className="flex flex-col items-center">
           
           {deviceMode === "mobile" ? (
