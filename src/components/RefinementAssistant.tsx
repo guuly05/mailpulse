@@ -34,6 +34,7 @@ import {
   Flame,
   Languages,
   Globe,
+  Undo2,
 } from "lucide-react";
 
 interface RefinementAssistantProps {
@@ -42,6 +43,8 @@ interface RefinementAssistantProps {
   campaign?: EmailCampaign;
   onUpdateCampaign?: (updated: EmailCampaign) => void;
   onOpenTranslator?: () => void;
+  onUndo?: () => void;
+  canUndo?: boolean;
 }
 
 export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
@@ -50,6 +53,8 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
   campaign,
   onUpdateCampaign,
   onOpenTranslator,
+  onUndo,
+  canUndo = false,
 }) => {
   const [instruction, setInstruction] = useState("");
   const [showSendTimeModal, setShowSendTimeModal] = useState(false);
@@ -309,6 +314,23 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
         </div>
 
         <div className="flex items-center space-x-2 shrink-0">
+          {/* Undo Button */}
+          {onUndo && (
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition flex items-center space-x-1.5 ${
+                canUndo
+                  ? "bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30 text-amber-300 cursor-pointer"
+                  : "bg-slate-950 border-slate-800 text-slate-600 opacity-50 cursor-not-allowed"
+              }`}
+              title={canUndo ? "Undo last change (Ctrl+Z)" : "No changes to undo"}
+            >
+              <Undo2 className="w-3.5 h-3.5 text-amber-400" />
+              <span>Undo</span>
+            </button>
+          )}
+
           {/* Translate Copy Trigger Button */}
           {onOpenTranslator && (
             <button

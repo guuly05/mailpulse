@@ -21,6 +21,9 @@ export default function App() {
   const [savedCampaigns, setSavedCampaigns] = useState<EmailCampaign[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<EmailCampaign | null>(null);
   
+  // Undo history stack (stores up to last 5 versions of activeCampaign)
+  const [historyStack, setHistoryStack] = useState<EmailCampaign[]>([]);
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingVariant, setIsGeneratingVariant] = useState(false);
@@ -149,8 +152,49 @@ export default function App() {
   };
 
   const saveOrUpdateActiveCampaign = (campaign: EmailCampaign) => {
+    if (activeCampaign) {
+      if (JSON.stringify(activeCampaign) !== JSON.stringify(campaign)) {
+        setHistoryStack((prevStack) => {
+          const newStack = [...prevStack, activeCampaign];
+          return newStack.slice(-5); // Track up to last 5 versions
+        });
+      }
+    }
     setActiveCampaign(campaign);
   };
+
+  // Revert activeCampaign to previous state in historyStack
+  const handleUndo = () => {
+    if (historyStack.length === 0) return;
+    const previousState = historyStack[historyStack.length - 1];
+    const newStack = historyStack.slice(0, historyStack.length - 1);
+    setHistoryStack(newStack);
+    setActiveCampaign(previousState);
+  };
+
+  // Global Keyboard Shortcut Listener for Ctrl+Z / Cmd+Z
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        const target = e.target as HTMLElement;
+        if (
+          target &&
+          (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.isContentEditable)
+        ) {
+          return;
+        }
+        if (historyStack.length > 0) {
+          e.preventDefault();
+          handleUndo();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [historyStack]);
 
   const handleDeleteCampaign = (id: string) => {
     const updated = savedCampaigns.filter((c) => c.id !== id);
@@ -411,8 +455,12 @@ export default function App() {
         onOpenSpamModal={() => setShowSpamModal(true)}
         onOpenSplitTest={scrollToSplitTest}
         onOpenTranslator={() => setShowTranslatorModal(true)}
+        onUndo={handleUndo}
+        canUndo={historyStack.length > 0}
+        undoCount={historyStack.length}
         onNewCampaign={() => {
           setActiveCampaign(null);
+          setHistoryStack([]);
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
         onForceAutoSave={handleForceSave}
@@ -496,6 +544,8 @@ export default function App() {
               campaign={activeCampaign}
               onUpdateCampaign={(updated) => saveOrUpdateActiveCampaign(updated)}
               onOpenTranslator={() => setShowTranslatorModal(true)}
+              onUndo={handleUndo}
+              canUndo={historyStack.length > 0}
             />
 
             {/* A/B Split Testing Comparator */}
@@ -553,7 +603,10 @@ export default function App() {
       {showHistoryDrawer && (
         <SavedCampaignsDrawer
           campaigns={savedCampaigns}
-          onSelectCampaign={(c) => setActiveCampaign(c)}
+          onSelectCampaign={(c) => {
+            setActiveCampaign(c);
+            setHistoryStack([]);
+          }}
           onDeleteCampaign={handleDeleteCampaign}
           onClose={() => setShowHistoryDrawer(false)}
           activeCampaignId={activeCampaign?.id}

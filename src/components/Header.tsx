@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split, CloudCheck, CloudUpload, CheckCircle2, Save, Bookmark, Languages } from "lucide-react";
+import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split, CloudCheck, CloudUpload, CheckCircle2, Save, Bookmark, Languages, Undo2 } from "lucide-react";
 
 interface HeaderProps {
   campaignCount: number;
@@ -11,6 +11,9 @@ interface HeaderProps {
   onOpenTranslator?: () => void;
   onNewCampaign: () => void;
   onForceAutoSave?: () => void;
+  onUndo?: () => void;
+  canUndo?: boolean;
+  undoCount?: number;
   hasCampaign: boolean;
   spamScore?: number;
   hasSplitTest?: boolean;
@@ -28,6 +31,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTranslator,
   onNewCampaign,
   onForceAutoSave,
+  onUndo,
+  canUndo = false,
+  undoCount = 0,
   hasCampaign,
   spamScore,
   hasSplitTest,
@@ -61,6 +67,29 @@ export const Header: React.FC<HeaderProps> = ({
           
           {hasCampaign && (
             <>
+              {/* Global Undo Button */}
+              {onUndo && (
+                <button
+                  id="header-undo-btn"
+                  onClick={onUndo}
+                  disabled={!canUndo}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                    canUndo
+                      ? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-sm cursor-pointer"
+                      : "bg-slate-950 text-slate-600 border-slate-800/80 opacity-50 cursor-not-allowed"
+                  }`}
+                  title={canUndo ? `Revert to previous version (${undoCount}/5 saved) — Ctrl+Z` : "No changes to undo"}
+                >
+                  <Undo2 className={`w-4 h-4 ${canUndo ? "text-amber-400" : "text-slate-600"}`} />
+                  <span className="hidden sm:inline">Undo</span>
+                  {canUndo && undoCount > 0 && (
+                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono px-1.5 py-0.2 rounded-full">
+                      {undoCount}
+                    </span>
+                  )}
+                </button>
+              )}
+
               {/* Auto-Save Indicator Badge */}
               <button
                 onClick={onForceAutoSave}
