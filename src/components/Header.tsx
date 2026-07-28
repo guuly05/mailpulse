@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split, CloudCheck, CloudUpload, CheckCircle2, Save, Bookmark, Languages, Undo2 } from "lucide-react";
+import { Mail, Sparkles, History, Code, ShieldCheck, PlusCircle, Split, CloudCheck, CloudUpload, CheckCircle2, Save, Bookmark, Languages, Undo2, FileSearch } from "lucide-react";
 
 interface HeaderProps {
   campaignCount: number;
@@ -9,6 +9,7 @@ interface HeaderProps {
   onOpenSpamModal: () => void;
   onOpenSplitTest?: () => void;
   onOpenTranslator?: () => void;
+  onOpenContentAudit?: () => void;
   onNewCampaign: () => void;
   onForceAutoSave?: () => void;
   onUndo?: () => void;
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSpamModal,
   onOpenSplitTest,
   onOpenTranslator,
+  onOpenContentAudit,
   onNewCampaign,
   onForceAutoSave,
   onUndo,
@@ -123,6 +125,19 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span>Spam Score: {spamScore}/100</span>
+                </button>
+              )}
+
+              {/* Content Audit Tool Button */}
+              {onOpenContentAudit && (
+                <button
+                  id="header-content-audit-btn"
+                  onClick={onOpenContentAudit}
+                  className="flex items-center space-x-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                  title="Run Content Audit on Copy, Readability & Value Props"
+                >
+                  <FileSearch className="w-4 h-4 text-indigo-400" />
+                  <span className="hidden sm:inline">Content Audit</span>
                 </button>
               )}
 

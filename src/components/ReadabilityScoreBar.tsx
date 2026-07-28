@@ -1,17 +1,19 @@
 import React, { useState } from "react";
 import { calculateReadability } from "../utils/readability";
-import { BookOpen, Info, ChevronDown, ChevronUp, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import { BookOpen, Info, ChevronDown, ChevronUp, Sparkles, CheckCircle2, AlertCircle, FileSearch } from "lucide-react";
 
 interface ReadabilityScoreBarProps {
   bodyParagraphs: string[];
   headline?: string;
   subheadline?: string;
+  onOpenContentAudit?: () => void;
 }
 
 export const ReadabilityScoreBar: React.FC<ReadabilityScoreBarProps> = ({
   bodyParagraphs,
   headline,
   subheadline,
+  onOpenContentAudit,
 }) => {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -64,13 +66,26 @@ export const ReadabilityScoreBar: React.FC<ReadabilityScoreBarProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={() => setShowDetails(!showDetails)}
-          className="text-xs font-medium text-slate-400 hover:text-white flex items-center space-x-1 shrink-0 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg transition"
-        >
-          <span className="font-mono text-white font-bold">{metrics.readingEase}/100</span>
-          {showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
+        <div className="flex items-center space-x-2 shrink-0">
+          {onOpenContentAudit && (
+            <button
+              onClick={onOpenContentAudit}
+              className="text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
+              title="Open Complete Content Audit Tool"
+            >
+              <FileSearch className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden sm:inline">Full Content Audit</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="text-xs font-medium text-slate-400 hover:text-white flex items-center space-x-1 shrink-0 bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-lg transition"
+          >
+            <span className="font-mono text-white font-bold">{metrics.readingEase}/100</span>
+            {showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
       </div>
 
       {/* Progress Bar */}

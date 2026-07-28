@@ -13,6 +13,7 @@ import { SplitTestComparator } from "./components/SplitTestComparator";
 import { CampaignPerformance } from "./components/CampaignPerformance";
 import { InboxSimulation } from "./components/InboxSimulation";
 import { CampaignTranslator } from "./components/CampaignTranslator";
+import { ContentAuditModal } from "./components/ContentAuditModal";
 import { Sparkles, AlertCircle, RefreshCw, Wand2 } from "lucide-react";
 
 const LOCAL_STORAGE_KEY = "mailpulse_saved_campaigns_v1";
@@ -36,6 +37,7 @@ export default function App() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showSpamModal, setShowSpamModal] = useState(false);
   const [showTranslatorModal, setShowTranslatorModal] = useState(false);
+  const [showContentAuditModal, setShowContentAuditModal] = useState(false);
 
   // Auto-Save draft state
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "idle">("idle");
@@ -455,6 +457,7 @@ export default function App() {
         onOpenSpamModal={() => setShowSpamModal(true)}
         onOpenSplitTest={scrollToSplitTest}
         onOpenTranslator={() => setShowTranslatorModal(true)}
+        onOpenContentAudit={() => setShowContentAuditModal(true)}
         onUndo={handleUndo}
         canUndo={historyStack.length > 0}
         undoCount={historyStack.length}
@@ -544,6 +547,7 @@ export default function App() {
               campaign={activeCampaign}
               onUpdateCampaign={(updated) => saveOrUpdateActiveCampaign(updated)}
               onOpenTranslator={() => setShowTranslatorModal(true)}
+              onOpenContentAudit={() => setShowContentAuditModal(true)}
               onUndo={handleUndo}
               canUndo={historyStack.length > 0}
             />
@@ -569,6 +573,7 @@ export default function App() {
                 handleRegenerateBannerImage(activeCampaign, prompt)
               }
               isGeneratingImage={isGeneratingImage}
+              onOpenContentAudit={() => setShowContentAuditModal(true)}
             />
 
           </div>
@@ -627,6 +632,14 @@ export default function App() {
           onUpdateCampaign={(updated) => saveOrUpdateActiveCampaign(updated)}
           isOpen={showTranslatorModal}
           onClose={() => setShowTranslatorModal(false)}
+        />
+      )}
+
+      {activeCampaign && (
+        <ContentAuditModal
+          isOpen={showContentAuditModal}
+          onClose={() => setShowContentAuditModal(false)}
+          campaign={activeCampaign}
         />
       )}
 

@@ -64,6 +64,7 @@ interface EmailPreviewProps {
   onUpdateCampaign: (updated: EmailCampaign) => void;
   onRegenerateImage: (prompt: string) => void;
   isGeneratingImage: boolean;
+  onOpenContentAudit?: () => void;
 }
 
 export const EmailPreview: React.FC<EmailPreviewProps> = ({
@@ -71,6 +72,7 @@ export const EmailPreview: React.FC<EmailPreviewProps> = ({
   onUpdateCampaign,
   onRegenerateImage,
   isGeneratingImage,
+  onOpenContentAudit,
 }) => {
   const [deviceMode, setDeviceMode] = useState<"desktop" | "mobile">("desktop");
   const [isEditingMode, setIsEditingMode] = useState(false);
@@ -214,6 +216,7 @@ export const EmailPreview: React.FC<EmailPreviewProps> = ({
           bodyParagraphs={campaign.bodyParagraphs}
           headline={campaign.headline}
           subheadline={campaign.subheadline}
+          onOpenContentAudit={onOpenContentAudit}
         />
       </div>
 

@@ -43,6 +43,7 @@ interface RefinementAssistantProps {
   campaign?: EmailCampaign;
   onUpdateCampaign?: (updated: EmailCampaign) => void;
   onOpenTranslator?: () => void;
+  onOpenContentAudit?: () => void;
   onUndo?: () => void;
   canUndo?: boolean;
 }
@@ -53,6 +54,7 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
   campaign,
   onUpdateCampaign,
   onOpenTranslator,
+  onOpenContentAudit,
   onUndo,
   canUndo = false,
 }) => {
@@ -706,6 +708,7 @@ export const RefinementAssistant: React.FC<RefinementAssistantProps> = ({
           bodyParagraphs={campaign.bodyParagraphs}
           headline={campaign.headline}
           subheadline={campaign.subheadline}
+          onOpenContentAudit={onOpenContentAudit}
         />
       )}
 
