@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { SubjectLine } from "../types";
-import { CheckCircle2, Flame, HelpCircle, Target, Sparkles, Edit3, Save, AlertCircle, Eye } from "lucide-react";
+import { CheckCircle2, Flame, HelpCircle, Target, Sparkles, Edit3, Save, AlertCircle, Eye, Smile } from "lucide-react";
+import { EmojiPickerPopover } from "./EmojiPickerPopover";
 
 interface SubjectLineSelectorProps {
   subjectLines: SubjectLine[];
@@ -23,6 +24,9 @@ export const SubjectLineSelector: React.FC<SubjectLineSelectorProps> = ({
   const [editSubjectInput, setEditSubjectInput] = useState("");
   const [editingPreview, setEditingPreview] = useState(false);
   const [editPreviewInput, setEditPreviewInput] = useState("");
+  const [emojiPickerTarget, setEmojiPickerTarget] = useState<
+    { type: "subject"; index: number } | { type: "preview" } | null
+  >(null);
 
   const handleStartEditSubject = (idx: number, currentText: string) => {
     setEditingIndex(idx);
@@ -44,6 +48,26 @@ export const SubjectLineSelector: React.FC<SubjectLineSelectorProps> = ({
   const handleSaveEditPreview = () => {
     onUpdatePreviewText(editPreviewInput.trim());
     setEditingPreview(false);
+  };
+
+  const handleInsertEmoji = (emoji: string) => {
+    if (!emojiPickerTarget) return;
+
+    if (emojiPickerTarget.type === "subject") {
+      const idx = emojiPickerTarget.index;
+      if (editingIndex === idx) {
+        setEditSubjectInput((prev) => `${emoji} ${prev}`);
+      } else {
+        const current = subjectLines[idx]?.text || "";
+        onUpdateSubjectText(idx, `${emoji} ${current}`);
+      }
+    } else if (emojiPickerTarget.type === "preview") {
+      if (editingPreview) {
+        setEditPreviewInput((prev) => `${emoji} ${prev}`);
+      } else {
+        onUpdatePreviewText(`${emoji} ${previewText}`);
+      }
+    }
   };
 
   const getTypeBadge = (type: string) => {
@@ -150,36 +174,86 @@ export const SubjectLineSelector: React.FC<SubjectLineSelectorProps> = ({
                   </div>
 
                   {editingIndex === idx ? (
-                    <div className="flex items-center space-x-2 mt-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center space-x-2 mt-1 relative" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="text"
                         value={editSubjectInput}
                         onChange={(e) => setEditSubjectInput(e.target.value)}
                         className="bg-slate-900 border border-blue-500 text-sm text-white rounded px-2.5 py-1 w-full focus:outline-none"
+                        placeholder="Enter subject line..."
                       />
                       <button
-                        onClick={() => handleSaveEditSubject(idx)}
-                        className="bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded"
+                        type="button"
+                        onClick={() => {
+                          if (emojiPickerTarget?.type === "subject" && emojiPickerTarget.index === idx) {
+                            setEmojiPickerTarget(null);
+                          } else {
+                            setEmojiPickerTarget({ type: "subject", index: idx });
+                          }
+                        }}
+                        className="bg-slate-800 hover:bg-slate-700 text-amber-300 p-1.5 rounded border border-slate-700 flex items-center justify-center shrink-0"
+                        title="Insert Brand Emoji"
+                      >
+                        <Smile className="w-4 h-4 text-amber-400" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleSaveEditSubject(idx);
+                          setEmojiPickerTarget(null);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-500 text-white p-1.5 rounded shrink-0"
                       >
                         <Save className="w-4 h-4" />
                       </button>
+
+                      {emojiPickerTarget?.type === "subject" && emojiPickerTarget.index === idx && (
+                        <EmojiPickerPopover
+                          onSelectEmoji={(emoji) => handleInsertEmoji(emoji)}
+                          onClose={() => setEmojiPickerTarget(null)}
+                          title="Subject Line Emojis"
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
                       <p className={`text-sm sm:text-base font-semibold ${isSelected ? "text-white" : "text-slate-200"}`}>
                         {item.text}
                       </p>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartEditSubject(idx, item.text);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-white transition"
-                        title="Edit Subject Line"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center space-x-1 shrink-0 relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (editingIndex !== idx) {
+                              handleStartEditSubject(idx, item.text);
+                            }
+                            setEmojiPickerTarget({ type: "subject", index: idx });
+                          }}
+                          className="p-1 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded transition flex items-center space-x-1"
+                          title="Insert Emoji"
+                        >
+                          <Smile className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartEditSubject(idx, item.text);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-white transition rounded hover:bg-slate-800"
+                          title="Edit Subject Line"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {emojiPickerTarget?.type === "subject" && emojiPickerTarget.index === idx && editingIndex !== idx && (
+                          <EmojiPickerPopover
+                            onSelectEmoji={(emoji) => handleInsertEmoji(emoji)}
+                            onClose={() => setEmojiPickerTarget(null)}
+                            title="Subject Line Emojis"
+                          />
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -216,33 +290,84 @@ export const SubjectLineSelector: React.FC<SubjectLineSelectorProps> = ({
           </label>
 
           {editingPreview ? (
-            <div className="flex items-center space-x-2 mt-1">
+            <div className="flex items-center space-x-2 mt-1 relative">
               <input
                 type="text"
                 value={editPreviewInput}
                 onChange={(e) => setEditPreviewInput(e.target.value)}
                 className="bg-slate-900 border border-blue-500 text-xs text-white rounded px-3 py-1.5 w-full focus:outline-none"
+                placeholder="Enter preheader text..."
               />
               <button
-                onClick={handleSaveEditPreview}
-                className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-semibold"
+                type="button"
+                onClick={() => {
+                  if (emojiPickerTarget?.type === "preview") {
+                    setEmojiPickerTarget(null);
+                  } else {
+                    setEmojiPickerTarget({ type: "preview" });
+                  }
+                }}
+                className="bg-slate-800 hover:bg-slate-700 text-amber-300 p-1.5 rounded border border-slate-700 flex items-center justify-center shrink-0"
+                title="Insert Brand Emoji"
+              >
+                <Smile className="w-3.5 h-3.5 text-amber-400" />
+              </button>
+              <button
+                onClick={() => {
+                  handleSaveEditPreview();
+                  setEmojiPickerTarget(null);
+                }}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-semibold shrink-0"
               >
                 Save
               </button>
+
+              {emojiPickerTarget?.type === "preview" && (
+                <EmojiPickerPopover
+                  onSelectEmoji={(emoji) => handleInsertEmoji(emoji)}
+                  onClose={() => setEmojiPickerTarget(null)}
+                  title="Preview Text Emojis"
+                />
+              )}
             </div>
           ) : (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between relative">
               <p className="text-xs sm:text-sm text-slate-300 italic">
                 "{previewText}"
               </p>
-              <button
-                type="button"
-                onClick={handleStartEditPreview}
-                className="text-xs text-blue-400 hover:text-blue-300 font-medium ml-2 shrink-0 flex items-center space-x-1"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Edit</span>
-              </button>
+              <div className="flex items-center space-x-2 shrink-0 relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!editingPreview) {
+                      handleStartEditPreview();
+                    }
+                    setEmojiPickerTarget({ type: "preview" });
+                  }}
+                  className="text-xs text-amber-400 hover:text-amber-300 font-medium shrink-0 flex items-center space-x-1 px-2 py-1 bg-amber-500/10 rounded-lg border border-amber-500/20"
+                  title="Insert Emoji"
+                >
+                  <Smile className="w-3.5 h-3.5" />
+                  <span>Emoji</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleStartEditPreview}
+                  className="text-xs text-blue-400 hover:text-blue-300 font-medium shrink-0 flex items-center space-x-1"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit</span>
+                </button>
+
+                {emojiPickerTarget?.type === "preview" && !editingPreview && (
+                  <EmojiPickerPopover
+                    onSelectEmoji={(emoji) => handleInsertEmoji(emoji)}
+                    onClose={() => setEmojiPickerTarget(null)}
+                    title="Preview Text Emojis"
+                  />
+                )}
+              </div>
             </div>
           )}
         </div>
