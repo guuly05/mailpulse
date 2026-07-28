@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Sparkles, Wand2, Target, Users, MessageSquare, Palette, Tag, Building2, Flame, Rocket, Award, ShoppingCart, ArrowRight, Bookmark } from "lucide-react";
+import { Sparkles, Wand2, Target, Users, MessageSquare, Palette, Tag, Building2, Flame, Rocket, Award, ShoppingCart, ArrowRight, Bookmark, MousePointerClick } from "lucide-react";
 import { CampaignGenerationOptions } from "../types";
 import { CAMPAIGN_PRESETS } from "../data/presets";
+import { CtaGeneratorModal } from "./CtaGeneratorModal";
 
 interface CampaignWizardProps {
   onGenerate: (options: CampaignGenerationOptions) => void;
@@ -24,6 +25,7 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
   const [visualStyle, setVisualStyle] = useState("Modern Minimalist Studio");
   const [primaryColor, setPrimaryColor] = useState("#2563eb");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showCtaModal, setShowCtaModal] = useState(false);
 
   const handleSelectPreset = (presetOptions: CampaignGenerationOptions) => {
     setPrompt(presetOptions.prompt);
@@ -165,6 +167,34 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
           </div>
         </div>
 
+        {/* CTA Button Text & Generator Row */}
+        <div className="bg-slate-950/80 border border-slate-800/90 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex-1 flex items-center space-x-3">
+            <MousePointerClick className="w-4 h-4 text-amber-400 shrink-0" />
+            <div className="w-full">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
+                Primary CTA Button Text
+              </label>
+              <input
+                type="text"
+                value={ctaText}
+                onChange={(e) => setCtaText(e.target.value)}
+                placeholder="e.g. Shop Discount Now"
+                className="bg-transparent text-xs font-bold text-white focus:outline-none w-full"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowCtaModal(true)}
+            className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 shrink-0 shadow-sm"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>CTA Generator (5 CRO Variations)</span>
+          </button>
+        </div>
+
         {/* Advanced Fine Tuning Options */}
         {showAdvanced && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-950/60 border border-slate-800 rounded-xl">
@@ -294,6 +324,22 @@ export const CampaignWizard: React.FC<CampaignWizardProps> = ({
         </div>
 
       </form>
+
+      {/* CTA Generator Modal */}
+      <CtaGeneratorModal
+        isOpen={showCtaModal}
+        onClose={() => setShowCtaModal(false)}
+        goal={goal}
+        brandName={brandName}
+        tone={tone}
+        audience={audience}
+        prompt={prompt}
+        promoCode={promoCode}
+        currentCtaText={ctaText}
+        onSelectCta={(selectedCta) => {
+          setCtaText(selectedCta);
+        }}
+      />
 
     </div>
   );

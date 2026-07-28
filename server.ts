@@ -746,6 +746,71 @@ Generate the complete translated campaign object into ${targetLanguage}, preserv
   }
 });
 
+// API Route: Generate 5 High-Converting Call-To-Action (CTA) Variations
+app.post("/api/generate-ctas", async (req, res) => {
+  try {
+    const { goal, brandName, tone, audience, prompt, promoCode } = req.body;
+
+    const ai = getGeminiClient();
+
+    const systemInstruction = `You are an expert Direct Response Copywriter and Conversion Rate Optimization (CRO) Specialist.
+Generate exactly 5 distinct, high-converting Call-To-Action (CTA) button copy variations tailored for an email marketing campaign.
+Each variation MUST use a different proven psychological angle (e.g., Action-Oriented, Benefit-Driven, Urgency & Scarcity, Low-Friction / Risk-Free, First-Person / Ownership).
+Return ONLY valid JSON.`;
+
+    const userPrompt = `
+Campaign Details:
+- Brand Name: ${brandName || "Acme Co"}
+- Campaign Goal: ${goal || "Promotional Sale"}
+- Target Audience: ${audience || "General Subscribers"}
+- Brand Tone: ${tone || "Engaging"}
+- Campaign Brief / Concept: ${prompt || "Special offer or announcement"}
+${promoCode ? `- Promo / Coupon Code: ${promoCode}` : ""}
+
+Generate 5 distinct CTA button variations. Provide button text, psychological angle name, predicted CTR boost, effectiveness score (0-100), detailed conversion rationale, and a recommended subtext/secondary note (e.g. "Free shipping • No code needed").
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: userPrompt,
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            goalSummary: { type: Type.STRING },
+            variations: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  text: { type: Type.STRING },
+                  angle: { type: Type.STRING },
+                  predictedCtr: { type: Type.STRING },
+                  effectivenessScore: { type: Type.NUMBER },
+                  rationale: { type: Type.STRING },
+                  secondaryNote: { type: Type.STRING },
+                },
+                required: ["text", "angle", "predictedCtr", "effectivenessScore", "rationale", "secondaryNote"],
+              },
+            },
+          },
+          required: ["goalSummary", "variations"],
+        },
+      },
+    });
+
+    const jsonText = response.text || "{}";
+    const data = JSON.parse(jsonText);
+
+    res.json({ success: true, goalSummary: data.goalSummary, ctas: data.variations || [] });
+  } catch (error: any) {
+    console.error("Error generating CTAs:", error);
+    res.status(500).json({ error: error.message || "Failed to generate CTA variations." });
+  }
+});
+
 // Start Express and Vite middleware
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
